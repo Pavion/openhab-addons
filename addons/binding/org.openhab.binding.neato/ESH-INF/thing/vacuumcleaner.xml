@@ -21,6 +21,11 @@
 				<required>true</required>
 				<context>password</context>
 			</parameter>
+            <parameter name="vendor" type="text" required="true">
+                <label>Vendor</label>
+                <description>Possible values are Neato or Vorwerk</description>
+                <default>Neato</default>
+            </parameter>            
 		</config-description>
 	</bridge-type>
 
@@ -66,6 +71,12 @@
 				<description>Refresh time interval in seconds for updates from the Neato Web Service.</description>
 				<default>60</default>
 			</parameter>
+
+            <parameter name="vendor" type="text" required="true">
+                <label>Vendor</label>
+                <description>Possible values are Neato or Vorwerk</description>
+                <default>Neato</default>
+            </parameter>            
 		</config-description>
 	</thing-type>
 
