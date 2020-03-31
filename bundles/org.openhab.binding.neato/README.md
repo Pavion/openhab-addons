@@ -1,3 +1,9 @@
+# Disclaimer
+
+This is a fork of a Neato Binding which is a part of openHAB addons found here:
+https://github.com/openhab/openhab-addons/tree/2.5.x/bundles/org.openhab.binding.neato
+This fork adds a new vendor option offering inofficial (and limited) support for Vorwerk vacuum cleaners.
+
 # Neato Binding
 
 This binding is used to connect your openHAB 2 system with Neato web (where you log in and find Your Neato's). The binding supports discovery via configuring your login and password to a bridge. From the binding, you will get status of your vacuum cleaners and also a command channel where you can control them. Since the binding uses a polling mechanism, there may be some latency depending on your setting regarding refresh time. 
@@ -32,8 +38,9 @@ Neato Account Config
 
 | Config   | Description                         |
 |----------|------------------------------------ |
-| email    | Email address tied to Neato Account |
-| password | Password tied to Neato Account      |
+| email    | Email address tied to your Account  |
+| password | Password tied to your Account       |
+| vendor   | Your vendor (Neato or Vorwerk)      |
 
 Vacuum Cleaner Config
 
@@ -105,6 +112,6 @@ Frame label="Neato BotVac Connected" {
 **neato.things**
 
 ```
-neato:vacuumcleaner:fanndamm [ serial="vacuumcleaner-serial", secret="secret-string"]
+neato:vacuumcleaner:fanndamm [ serial="vacuumcleaner-serial", secret="secret-string", vendor="neato"]
 ```
 

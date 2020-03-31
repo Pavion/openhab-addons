@@ -16,11 +16,21 @@ package org.openhab.binding.neato.internal.config;
  * Parameters used for bridge configuration.
  *
  * @author Jeff Lauterbach - Initial Contribution
+ * @author Pavion - Vendor added
  */
 public class NeatoAccountConfig {
 
+    private String vendor;
     private String email;
     private String password;
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
 
     public String getEmail() {
         return email;

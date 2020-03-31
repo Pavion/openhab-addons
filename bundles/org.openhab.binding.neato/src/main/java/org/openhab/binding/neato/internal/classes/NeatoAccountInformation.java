@@ -20,9 +20,11 @@ import com.google.gson.annotations.SerializedName;
  * The {@link NeatoAccountInformation} is the internal class for the neato web service account and information.
  *
  * @author Patrik Wimnell - Initial contribution
+ * @author Pavion - Vendor added
  */
 public class NeatoAccountInformation {
 
+    private String vendor;
     private String email;
     private Object firstName;
     private Object lastName;
@@ -38,6 +40,14 @@ public class NeatoAccountInformation {
     private List<Robot> robots = null;
     @SerializedName("recent_firmwares")
     private RecentFirmwares recentFirmwares;
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
 
     public String getEmail() {
         return email;
