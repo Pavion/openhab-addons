@@ -16,6 +16,7 @@ package org.openhab.binding.neato.internal.config;
  * Config class for a Neato Robot
  *
  * @author Jeff Lauterbach - Initial Contribution
+ * @author Pavion - Vendor added
  *
  */
 public class NeatoRobotConfig {
@@ -23,6 +24,15 @@ public class NeatoRobotConfig {
     private int refresh;
     private String secret;
     private String serial;
+    private String vendor;
+
+    public String getVendor() {
+        return vendor;
+    }
+
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
 
     public int getRefresh() {
         return refresh;
@@ -50,6 +60,7 @@ public class NeatoRobotConfig {
 
     @Override
     public String toString() {
-        return "NeatoRobotConfig [refresh=" + refresh + ", secret=" + secret + ", serial=" + serial + "]";
+        return "NeatoRobotConfig [refresh=" + refresh + ", secret=" + secret + ", serial=" + serial + ", vendor="
+                + vendor + "]";
     }
 }
