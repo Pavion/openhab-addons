@@ -12,8 +12,7 @@
  */
 package org.openhab.binding.neato.internal;
 
-import static org.openhab.binding.neato.internal.classes.Category.HOUSE;
-import static org.openhab.binding.neato.internal.classes.Category.MAP;
+import static org.openhab.binding.neato.internal.classes.Category.*;
 import static org.openhab.binding.neato.internal.classes.Mode.TURBO;
 import static org.openhab.binding.neato.internal.classes.NavigationMode.DEEP;
 
@@ -34,7 +33,10 @@ import java.util.TimeZone;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.openhab.binding.neato.internal.classes.*;
+import org.openhab.binding.neato.internal.classes.ErrorMessage;
+import org.openhab.binding.neato.internal.classes.NeatoGeneralInfo;
+import org.openhab.binding.neato.internal.classes.NeatoRobotInfo;
+import org.openhab.binding.neato.internal.classes.NeatoState;
 import org.openhab.binding.neato.internal.config.NeatoRobotConfig;
 import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.util.HexUtils;
@@ -61,12 +63,14 @@ public class NeatoRobot {
     private NeatoState state;
     private NeatoRobotInfo info;
     private NeatoGeneralInfo generalInfo;
+    private String vendor;
 
     private Gson gson = new Gson();
 
     public NeatoRobot(NeatoRobotConfig config) {
         this.serialNumber = config.getSerial();
         this.secret = config.getSecret();
+        this.vendor = config.getVendor();
     }
 
     public NeatoState getState() {
@@ -105,14 +109,22 @@ public class NeatoRobot {
             headers.setProperty("Authorization", "NEATOAPP " + hexString);
             headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
 
-            logger.debug("Calling Neato WS with body: {}", body);
+            logger.debug("Calling Nucleo WS with body: {}", body);
 
             InputStream stream = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+            String result = "";
 
-            return HttpUtil.executeUrl("POST",
-                    "https://nucleo.neatocloud.com:4443/vendors/neato/robots/" + this.serialNumber + "/messages",
-                    headers, stream, "text/html; charset=ISO-8859-1", 20000);
+            if (vendor.toLowerCase().trim().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
+                result = HttpUtil.executeUrl("POST",
+                        "https://nucleo.ksecosys.com/vendors/vorwerk/robots/" + this.serialNumber + "/messages",
+                        headers, stream, "text/html; charset=ISO-8859-1", 20000);
+            } else {
+                result = HttpUtil.executeUrl("POST",
+                        "https://nucleo.neatocloud.com:4443/vendors/neato/robots/" + this.serialNumber + "/messages",
+                        headers, stream, "text/html; charset=ISO-8859-1", 20000);
+            }
 
+            return result;
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException e) {
             throw new NeatoCommunicationException(e);
         }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.eclipse.jdt.annotation.NonNull;
+import org.openhab.binding.neato.internal.NeatoBindingConstants;
 import org.openhab.binding.neato.internal.classes.BeehiveAuthentication;
 import org.openhab.binding.neato.internal.classes.NeatoAccountInformation;
 import org.openhab.binding.neato.internal.classes.Robot;
@@ -43,14 +44,20 @@ import com.google.gson.Gson;
  * Bridge handler to manage Neato Cloud Account
  *
  * @author Jeff Lauterbach - Initial Contribution
- *
+ * @author Pavion - Vendor added
  */
 public class NeatoAccountHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(NeatoAccountHandler.class);
+    private NeatoAccountConfig accountConfig;
 
     public NeatoAccountHandler(Bridge bridge) {
         super(bridge);
+        accountConfig = getConfigAs(NeatoAccountConfig.class);
+    }
+
+    public String getVendor() {
+        return accountConfig.getVendor().toLowerCase().trim();
     }
 
     @Override
@@ -69,8 +76,14 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
         headers.setProperty("Authorization", "Token token=" + accessToken);
 
         try {
-            String resultString = HttpUtil.executeUrl("GET", "https://beehive.neatocloud.com/dashboard", headers, null,
-                    "application/json", 20000);
+            String resultString = "";
+            if (getVendor().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
+                resultString = HttpUtil.executeUrl("GET", "https://vorwerk-beehive-production.herokuapp.com/dashboard",
+                        headers, null, "application/json", 20000);
+            } else {
+                resultString = HttpUtil.executeUrl("GET", "https://beehive.neatocloud.com/dashboard", headers, null,
+                        "application/json", 20000);
+            }
 
             Gson gson = new Gson();
             NeatoAccountInformation accountInformation = gson.fromJson(resultString, NeatoAccountInformation.class);
@@ -88,7 +101,6 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
     public @NonNull List<Robot> getRobotsFromNeato() {
         logger.debug("Attempting to find robots tied to account");
-        NeatoAccountConfig accountConfig = getConfigAs(NeatoAccountConfig.class);
         String accessToken = authenticate(accountConfig.getEmail(), accountConfig.getPassword());
 
         if (accessToken != null) {
@@ -106,7 +118,11 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
         String authenticationResponse = "";
         try {
-            authenticationResponse = sendAuthRequestToNeato(gson.toJson(req));
+            if (getVendor().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
+                authenticationResponse = sendAuthRequestToVorwerk(req);
+            } else {
+                authenticationResponse = sendAuthRequestToNeato(gson.toJson(req));
+            }
         } catch (IOException e) {
             logger.debug("Error when sending Authentication request to Neato.", e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
@@ -125,8 +141,23 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
         String resultString = HttpUtil.executeUrl("POST", "https://beehive.neatocloud.com/sessions", headers, stream,
                 "application/json", 20000);
 
-        logger.debug("Authentication Response: {}", resultString);
+        logger.debug("Authentication Response from Neato: {}", resultString);
 
+        return resultString;
+    }
+
+    private String sendAuthRequestToVorwerk(AuthRequest data) throws IOException {
+        Properties headers = new Properties();
+        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
+
+        String payload = "email=" + data.getEmail() + "&password=" + data.getPassword() + "&os=" + data.getOs()
+                + "&token=" + data.getToken();
+        InputStream stream = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
+
+        String resultString = HttpUtil.executeUrl("POST", "https://vorwerk-beehive-production.herokuapp.com/sessions",
+                headers, stream, "application/json", 20000);
+
+        logger.debug("Authentication Response from Vorwerk: {}", resultString);
         return resultString;
     }
 
