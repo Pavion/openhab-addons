@@ -63,7 +63,7 @@ public class NeatoAccountDiscoveryService extends AbstractDiscoveryService {
 
     @Override
     protected void startBackgroundDiscovery() {
-        findRobots();
+        // findRobots();
     }
 
     @Override

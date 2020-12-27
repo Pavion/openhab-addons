@@ -114,10 +114,10 @@ public class NeatoRobot {
             InputStream stream = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
             String result = "";
 
-            if (vendor.toLowerCase().trim().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
-                result = HttpUtil.executeUrl("POST",
-                        "https://nucleo.ksecosys.com/vendors/vorwerk/robots/" + this.serialNumber + "/messages",
-                        headers, stream, "text/html; charset=ISO-8859-1", 20000);
+            if (vendor.toLowerCase().trim().equals(VendorVorwerk.VENDOR_NAME)) {
+                result = VendorVorwerk.executeRequest("POST",
+                        VendorVorwerk.NUCLEO_URL + "/vendors/vorwerk/robots/" + this.serialNumber + "/messages",
+                        headers, body, "text/html; charset=ISO-8859-1", 20000);
             } else {
                 result = HttpUtil.executeUrl("POST",
                         "https://nucleo.neatocloud.com:4443/vendors/neato/robots/" + this.serialNumber + "/messages",

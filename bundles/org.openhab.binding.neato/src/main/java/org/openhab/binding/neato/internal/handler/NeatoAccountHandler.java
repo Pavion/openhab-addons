@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.openhab.binding.neato.internal.NeatoBindingConstants;
+import org.openhab.binding.neato.internal.VendorVorwerk;
 import org.openhab.binding.neato.internal.classes.BeehiveAuthentication;
 import org.openhab.binding.neato.internal.classes.NeatoAccountInformation;
 import org.openhab.binding.neato.internal.classes.Robot;
@@ -77,9 +77,9 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
         try {
             String resultString = "";
-            if (getVendor().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
-                resultString = HttpUtil.executeUrl("GET", "https://vorwerk-beehive-production.herokuapp.com/dashboard",
-                        headers, null, "application/json", 20000);
+            if (getVendor().equals(VendorVorwerk.VENDOR_NAME)) {
+                resultString = VendorVorwerk.executeRequest("GET", VendorVorwerk.BEEHIVE_URL + "/dashboard", headers,
+                        null, "application/json", 20000);
             } else {
                 resultString = HttpUtil.executeUrl("GET", "https://beehive.neatocloud.com/dashboard", headers, null,
                         "application/json", 20000);
@@ -118,7 +118,7 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
         String authenticationResponse = "";
         try {
-            if (getVendor().equals(NeatoBindingConstants.VENDOR_VORWERK)) {
+            if (getVendor().equals(VendorVorwerk.VENDOR_NAME)) {
                 authenticationResponse = sendAuthRequestToVorwerk(req);
             } else {
                 authenticationResponse = sendAuthRequestToNeato(gson.toJson(req));
@@ -147,15 +147,15 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
     }
 
     private String sendAuthRequestToVorwerk(AuthRequest data) throws IOException {
-        Properties headers = new Properties();
-        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
 
         String payload = "email=" + data.getEmail() + "&password=" + data.getPassword() + "&os=" + data.getOs()
                 + "&token=" + data.getToken();
-        InputStream stream = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
 
-        String resultString = HttpUtil.executeUrl("POST", "https://vorwerk-beehive-production.herokuapp.com/sessions",
-                headers, stream, "application/json", 20000);
+        Properties headers = new Properties();
+        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
+
+        String resultString = VendorVorwerk.executeRequest("POST", VendorVorwerk.BEEHIVE_URL + "/sessions", headers,
+                payload, "application/json", 20000);
 
         logger.debug("Authentication Response from Vorwerk: {}", resultString);
         return resultString;
