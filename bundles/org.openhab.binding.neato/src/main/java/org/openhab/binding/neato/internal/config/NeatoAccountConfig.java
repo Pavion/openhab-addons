@@ -21,8 +21,7 @@ package org.openhab.binding.neato.internal.config;
 public class NeatoAccountConfig {
 
     private String vendor;
-    private String email;
-    private String password;
+    private String token;
 
     public String getVendor() {
         return vendor;
@@ -32,19 +31,11 @@ public class NeatoAccountConfig {
         this.vendor = vendor;
     }
 
-    public String getEmail() {
-        return email;
+    public String getToken() {
+        return token;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setToken(String token) {
+        this.token = token;
     }
 }

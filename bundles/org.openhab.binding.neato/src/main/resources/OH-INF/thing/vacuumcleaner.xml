@@ -9,22 +9,14 @@
 		<description>Access to Neato Account. Used to discover robots tied to account.</description>
 
 		<config-description>
-			<parameter name="email" type="text">
-				<label>E-mail Address</label>
-				<description>E-mail address for your Neato Cloud account.</description>
-				<required>true</required>
-				<context>email</context>
-			</parameter>
-			<parameter name="password" type="text">
-				<label>Password</label>
-				<description>Password for your Neato Cloud account.</description>
-				<required>true</required>
-				<context>password</context>
-			</parameter>
 			<parameter name="vendor" type="text" required="true">
 				<label>Vendor</label>
 				<description>Possible values are Neato or Vorwerk</description>
-				<default>Neato</default>
+				<default>Vorwerk</default>
+			</parameter>
+			<parameter name="token" type="text">
+				<label>oAuth Token</label>
+				<description>See readme for how to obtain it</description>
 			</parameter>
 		</config-description>
 	</bridge-type>
@@ -77,6 +69,7 @@
 				<description>Possible values are Neato or Vorwerk</description>
 				<default>Neato</default>
 			</parameter>
+
 		</config-description>
 	</thing-type>
 

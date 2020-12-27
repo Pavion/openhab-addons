@@ -37,7 +37,7 @@ import javax.net.ssl.X509TrustManager;
  */
 public class VendorVorwerk {
 
-    public static final String BEEHIVE_URL = "https://vorwerk-beehive-production.herokuapp.com";
+    public static final String BEEHIVE_URL = "https://beehive.ksecosys.com";
     public static final String NUCLEO_URL = "https://nucleo.ksecosys.com";
     public static final String VENDOR_NAME = "vorwerk";
 

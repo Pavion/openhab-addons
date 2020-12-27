@@ -12,19 +12,13 @@
  */
 package org.openhab.binding.neato.internal.handler;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.openhab.binding.neato.internal.VendorVorwerk;
-import org.openhab.binding.neato.internal.classes.BeehiveAuthentication;
 import org.openhab.binding.neato.internal.classes.NeatoAccountInformation;
 import org.openhab.binding.neato.internal.classes.Robot;
 import org.openhab.binding.neato.internal.config.NeatoAccountConfig;
@@ -72,8 +66,7 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
     private List<Robot> sendGetRobots(String accessToken) {
         Properties headers = new Properties();
         headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
-
-        headers.setProperty("Authorization", "Token token=" + accessToken);
+        headers.setProperty("Authorization", "Auth0Bearer " + accessToken);
 
         try {
             String resultString = "";
@@ -101,93 +94,14 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
     public @NonNull List<Robot> getRobotsFromNeato() {
         logger.debug("Attempting to find robots tied to account");
-        String accessToken = authenticate(accountConfig.getEmail(), accountConfig.getPassword());
+        String accessToken = accountConfig.getToken();
 
         if (accessToken != null) {
-            return sendGetRobots(accessToken);
+            if (!accessToken.equals("")) {
+                return sendGetRobots(accessToken);
+            }
         }
 
         return new ArrayList<>();
-    }
-
-    private String authenticate(String username, String password) {
-        Gson gson = new Gson();
-
-        AuthRequest req = new AuthRequest(username, password, "ios",
-                new BigInteger(130, new SecureRandom()).toString(64));
-
-        String authenticationResponse = "";
-        try {
-            if (getVendor().equals(VendorVorwerk.VENDOR_NAME)) {
-                authenticationResponse = sendAuthRequestToVorwerk(req);
-            } else {
-                authenticationResponse = sendAuthRequestToNeato(gson.toJson(req));
-            }
-        } catch (IOException e) {
-            logger.debug("Error when sending Authentication request to Neato.", e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "Error when sending Authentication request to Neato.");
-        }
-
-        BeehiveAuthentication authenticationObject = gson.fromJson(authenticationResponse, BeehiveAuthentication.class);
-        return authenticationObject.getAccessToken();
-    }
-
-    private String sendAuthRequestToNeato(String data) throws IOException {
-        Properties headers = new Properties();
-        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
-
-        InputStream stream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-        String resultString = HttpUtil.executeUrl("POST", "https://beehive.neatocloud.com/sessions", headers, stream,
-                "application/json", 20000);
-
-        logger.debug("Authentication Response from Neato: {}", resultString);
-
-        return resultString;
-    }
-
-    private String sendAuthRequestToVorwerk(AuthRequest data) throws IOException {
-
-        String payload = "email=" + data.getEmail() + "&password=" + data.getPassword() + "&os=" + data.getOs()
-                + "&token=" + data.getToken();
-
-        Properties headers = new Properties();
-        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
-
-        String resultString = VendorVorwerk.executeRequest("POST", VendorVorwerk.BEEHIVE_URL + "/sessions", headers,
-                payload, "application/json", 20000);
-
-        logger.debug("Authentication Response from Vorwerk: {}", resultString);
-        return resultString;
-    }
-
-    private static class AuthRequest {
-        private String email;
-        private String password;
-        private String os;
-        private String token;
-
-        public AuthRequest(String email, String password, String os, String token) {
-            this.email = email;
-            this.password = password;
-            this.os = os;
-            this.token = token;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public String getOs() {
-            return os;
-        }
-
-        public String getToken() {
-            return token;
-        }
     }
 }
