@@ -66,7 +66,12 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
     private List<Robot> sendGetRobots(String accessToken) {
         Properties headers = new Properties();
         headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
-        headers.setProperty("Authorization", "Auth0Bearer " + accessToken);
+        if (getVendor().equals(VendorVorwerk.VENDOR_NAME)) {
+            headers.setProperty("Authorization", "Auth0Bearer " + accessToken);
+        } else {
+            headers.setProperty("Authorization", "Bearer token=" + accessToken);
+            // https://developers.neatorobotics.com/api/beehive
+        }
 
         try {
             String resultString = "";

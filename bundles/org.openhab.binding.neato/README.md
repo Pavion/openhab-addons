@@ -1,16 +1,48 @@
-# Disclaimer
+# Neato Binding Vendor Fork
 
 This is a fork of a Neato Binding which is a part of openHAB addons found here:
 https://github.com/openhab/openhab-addons
-This fork adds a new vendor option offering inofficial (and limited) support for Vorwerk vacuum cleaners.
+This fork adds a new vendor option offering unofficial (and limited) support for Vorwerk vacuum cleaners.
+
+## Installation 
+
+**If you already know your vacuum's serial and secret you can omit Bridge creation and just create your vacuum Thing with both provided.**
+
+As of now, bridge is used for automatic detection only and require some advanced steps. 
+If you're unsure what you're doing, don't :) 
+
+## Obtaining token or serial/secret
+
+### For Vorwerk vacuums
+
+- obtaining the token (for automatic discovery): 
+
+https://github.com/nicoh88/node-kobold#getting-a-token
+
+- obtaining serial/secret manually 
+
+Just use this additional command with the token to obtain the both your serial and your secret for manual creation
+```
+curl --location --request GET 'https://beehive.ksecosys.com/dashboard' --header 'Authorization: Auth0Bearer VERY_LONG_ID_TOKEN'
+```
+
+### For Neato vacuums
+
+Unknown
+
+## Feedback
+
+Please provide your feedback. If possible, enable debug logging in Karaf with:
+```
+log:set DEBUG org.openhab.binding.neato
+```
+and include a log excerpt (don't forget to set it back to ERROR sometime).
 
 # Neato Binding
 
-This binding is used to connect your openHAB system with Neato web (where you log in and find Your Neato's).
-The binding supports discovery via configuring your login and password to a bridge.
+This binding is used to connect your openHAB system with Neato/Vorwerk web (where your vacuums live).
+The binding supports discovery via oAuth token (see above)
 From the binding, you will get status of your vacuum cleaners and also a command channel where you can control them. Since the binding uses a polling mechanism, there may be some latency depending on your setting regarding refresh time. 
-
-For log in transaction, the binding uses Neato Beehive API and for status and control, the binding uses Nucleao API. 
 
 ## Supported Things
 
@@ -19,7 +51,7 @@ Supported thing types
 * neatoaccount (bridge)
 * vacuumcleaner
 
-A bridge is required to connect to your Neato Cloud account.  
+A bridge is only required for autodiscovery.
 
 All "Connected" type vacuum cleaners should be supported by this binding since they are supported by the Neato API.  As of todays date, it is only verified with Neato Connected and Neato D7 vacuum cleaners.
 
@@ -28,7 +60,7 @@ All "Connected" type vacuum cleaners should be supported by this binding since t
 Discovery is used _after_ a bridge has been created and configured with your login information.
 
 1. Add the binding
-2. Add a new thing of type NeatoAccount and configure with username and password
+2. Add a new thing of type NeatoAccount and configure with your token id (see above)
 3. Go to Inbox and start discovery of Vacuums using Neato Binding
 4. Vacuums should appear in your inbox!
 
@@ -42,8 +74,7 @@ Neato Account Config
 
 | Config   | Description                         |
 |----------|------------------------------------ |
-| email    | Email address tied to Neato Account |
-| password | Password tied to Neato Account      |
+| token    | Your oAuth token                    |
 | vendor   | Your vendor (Neato or Vorwerk)      |
 
 Vacuum Cleaner Config
@@ -53,12 +84,13 @@ Vacuum Cleaner Config
 | serial   | Serial Number of your Neato Robot       |
 | secret   | Secret for accessing Neato web services (see note above) |
 | refresh  | Refresh time interval in seconds for updates from the Neato Web Service.  Defaults to 60 sec |
+| vendor   | Your vendor (Neato or Vorwerk)      |
 
 ## Channels
 
 | Channel             | Type   | Label                      | Description                                                                               | Read Only |
 |---------------------|--------|----------------------------|-------------------------------------------------------------------------------------------|-----------|
-| battery-level| Number | Battery Level              | Battery Level of the vacuum cleaner.                                                      | True      |
+| battery-level       | Number | Battery Level              | Battery Level of the vacuum cleaner.                                                      | True      |
 | state               | String | Current State              | Current state of the vacuum cleaner.                                                      | True      |
 | available-services  | String | Current available services | List of services that are currently available for the vacuum cleaner                      | True      |
 | action              | String | Current Action             | Current action of the vacuum cleaner.                                                     | True      |
@@ -68,7 +100,7 @@ Vacuum Cleaner Config
 | is-charging         | Switch | Is Charging                | Is the vacuum cleaner currently charging?                                                 | True      |
 | available-commands  | String | Available Commands         | List of available commands.                                                               | True      |
 | error               | String | Error                      | Current error message in system.                                                          | True      |
-| command             | String | Send Command               | Send Commands to Vacuum Cleaner. (clean with map, clean, pause, resume, stop, dock)                       | False     |
+| command             | String | Send Command               | Send Commands to Vacuum Cleaner. (clean with map, clean, pause, resume, stop, dock)       | False     |
 | cleaning-category   | String | Cleaning Category          | Current or Last category of the cleaning. Manual, Normal House Cleaning or Spot Cleaning. | True      |
 | cleaning-mode       | String | Cleaning Mode              | Current or Last cleaning mode. Eco or Turbo.                                              | True      |
 | cleaning-modifier   | String | Cleaning Modifier          | Modifier of current or last cleaning. Normal or Double.                                   | True      |
@@ -113,8 +145,24 @@ Frame label="Neato BotVac Connected" {
 }
 ```
 
-**neato.things**
+**neato.things** (Vorwerk edition)
+
+- Bridge (autodiscovery only)
 
 ```
-neato:vacuumcleaner:fanndamm [ serial="vacuumcleaner-serial", secret="secret-string", vendor="neato"]
+Bridge neato:neatoaccount:bridgeName "Vacuum Account" @ "Home" [ vendor="vorwerk", token="VERY_LONG_ID_TOKEN" ] 
+```
+
+- Vacuum only 
+
+```
+Thing neato:vacuumcleaner:ThingName "Vacuum" @ "Home" [ serial="MYSERIAL", secret="MYSECRET", vendor="vorwerk"]
+```
+
+- Both (because why not)
+
+```
+Bridge neato:neatoaccount:bridgeName "Vacuum Account" @ "Home" [ vendor="vorwerk", token="" ] {
+    Thing vacuumcleaner ThingName "Vacuum" @ "Home" [ serial="MYSERIAL", secret="MYSECRET", vendor="vorwerk"]
+}
 ```
