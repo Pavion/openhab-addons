@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -128,7 +128,7 @@ public class JdbcPersistenceService extends JdbcMapper implements QueryablePersi
      */
     @Override
     public void store(Item item, @Nullable String alias) {
-        // Don not store undefined/uninitialised data
+        // Do not store undefined/uninitialized data
         if (item.getState() instanceof UnDefType) {
             logger.debug("JDBC::store: ignore Item '{}' because it is UnDefType", item.getName());
             return;
@@ -141,8 +141,8 @@ public class JdbcPersistenceService extends JdbcMapper implements QueryablePersi
         }
         long timerStart = System.currentTimeMillis();
         storeItemValue(item);
-        logger.debug("JDBC: Stored item '{}' as '{}' in SQL database at {} in {} ms.", item.getName(),
-                item.getState().toString(), (new java.util.Date()).toString(), System.currentTimeMillis() - timerStart);
+        logger.debug("JDBC: Stored item '{}' as '{}' in SQL database at {} in {} ms.", item.getName(), item.getState(),
+                new java.util.Date(), System.currentTimeMillis() - timerStart);
     }
 
     @Override
@@ -193,19 +193,16 @@ public class JdbcPersistenceService extends JdbcMapper implements QueryablePersi
 
         String table = sqlTables.get(itemName);
         if (table == null) {
-            logger.warn(
-                    "JDBC::query: unable to find table for query, no data in database for item '{}'. Current number of tables in the database: {}",
-                    itemName, sqlTables.size());
-            // if enabled, table will be created immediately
-            logger.warn("JDBC::query: try to generate the table for item '{}'", itemName);
-            table = getTable(item);
+            logger.debug("JDBC::query: unable to find table for item with name: '{}', no data in database.", itemName);
+            return List.of();
         }
 
         long timerStart = System.currentTimeMillis();
         List<HistoricItem> items = getHistItemFilterQuery(filter, conf.getNumberDecimalcount(), table, item);
-
-        logger.debug("JDBC::query: query for {} returned {} rows in {} ms", item.getName(), items.size(),
-                System.currentTimeMillis() - timerStart);
+        if (logger.isDebugEnabled()) {
+            logger.debug("JDBC: Query for item '{}' returned {} rows in {} ms", itemName, items.size(),
+                    System.currentTimeMillis() - timerStart);
+        }
 
         // Success
         errCnt = 0;

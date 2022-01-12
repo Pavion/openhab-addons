@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -69,7 +69,17 @@ import io.github.hapjava.characteristics.impl.common.StatusFaultCharacteristic;
 import io.github.hapjava.characteristics.impl.common.StatusFaultEnum;
 import io.github.hapjava.characteristics.impl.common.StatusTamperedCharacteristic;
 import io.github.hapjava.characteristics.impl.common.StatusTamperedEnum;
-import io.github.hapjava.characteristics.impl.fan.*;
+import io.github.hapjava.characteristics.impl.fan.CurrentFanStateCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.CurrentFanStateEnum;
+import io.github.hapjava.characteristics.impl.fan.LockPhysicalControlsCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.LockPhysicalControlsEnum;
+import io.github.hapjava.characteristics.impl.fan.RotationDirectionCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.RotationDirectionEnum;
+import io.github.hapjava.characteristics.impl.fan.RotationSpeedCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.SwingModeCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.SwingModeEnum;
+import io.github.hapjava.characteristics.impl.fan.TargetFanStateCharacteristic;
+import io.github.hapjava.characteristics.impl.fan.TargetFanStateEnum;
 import io.github.hapjava.characteristics.impl.lightbulb.BrightnessCharacteristic;
 import io.github.hapjava.characteristics.impl.lightbulb.ColorTemperatureCharacteristic;
 import io.github.hapjava.characteristics.impl.lightbulb.HueCharacteristic;
@@ -164,9 +174,11 @@ public class HomekitCharacteristicFactory {
             T offEnum, T onEnum, T defaultEnum) {
         final State state = item.getItem().getState();
         if (state instanceof OnOffType) {
-            return CompletableFuture.completedFuture(state.equals(OnOffType.OFF) ? offEnum : onEnum);
+            return CompletableFuture
+                    .completedFuture(state.equals(item.isInverted() ? OnOffType.ON : OnOffType.OFF) ? offEnum : onEnum);
         } else if (state instanceof OpenClosedType) {
-            return CompletableFuture.completedFuture(state.equals(OpenClosedType.CLOSED) ? offEnum : onEnum);
+            return CompletableFuture.completedFuture(
+                    state.equals(item.isInverted() ? OpenClosedType.OPEN : OpenClosedType.CLOSED) ? offEnum : onEnum);
         } else if (state instanceof DecimalType) {
             return CompletableFuture.completedFuture(((DecimalType) state).intValue() == 0 ? offEnum : onEnum);
         } else if (state instanceof UnDefType) {
@@ -182,9 +194,9 @@ public class HomekitCharacteristicFactory {
             CharacteristicEnum offEnum, CharacteristicEnum onEnum) {
         if (taggedItem.getItem() instanceof SwitchItem) {
             if (value.equals(offEnum)) {
-                ((SwitchItem) taggedItem.getItem()).send(OnOffType.OFF);
+                ((SwitchItem) taggedItem.getItem()).send(taggedItem.isInverted() ? OnOffType.ON : OnOffType.OFF);
             } else if (value.equals(onEnum)) {
-                ((SwitchItem) taggedItem.getItem()).send(OnOffType.ON);
+                ((SwitchItem) taggedItem.getItem()).send(taggedItem.isInverted() ? OnOffType.OFF : OnOffType.ON);
             } else {
                 logger.warn("Enum value {} is not supported. Only following values are supported: {},{}", value,
                         offEnum, onEnum);
@@ -197,15 +209,16 @@ public class HomekitCharacteristicFactory {
         }
     }
 
-    private static int getIntFromItem(HomekitTaggedItem taggedItem) {
-        int value = 0;
+    private static int getIntFromItem(HomekitTaggedItem taggedItem, int defaultValue) {
+        int value = defaultValue;
         final State state = taggedItem.getItem().getState();
         if (state instanceof PercentType) {
             value = ((PercentType) state).intValue();
         } else if (state instanceof DecimalType) {
             value = ((DecimalType) state).intValue();
         } else if (state instanceof UnDefType) {
-            logger.debug("Item state {} is UNDEF {}.", state, taggedItem.getName());
+            logger.debug("Item state {} is UNDEF {}. Returning default value {}", state, taggedItem.getName(),
+                    defaultValue);
         } else {
             logger.warn(
                     "Item state {} is not supported for {}. Only PercentType and DecimalType (0/100) are supported.",
@@ -214,8 +227,25 @@ public class HomekitCharacteristicFactory {
         return value;
     }
 
-    private static Supplier<CompletableFuture<Integer>> getIntSupplier(HomekitTaggedItem taggedItem) {
-        return () -> CompletableFuture.completedFuture(getIntFromItem(taggedItem));
+    /** special method for tilts. it converts percentage to angle */
+    private static int getAngleFromItem(HomekitTaggedItem taggedItem, int defaultValue) {
+        int value = defaultValue;
+        final State state = taggedItem.getItem().getState();
+        if (state instanceof PercentType) {
+            value = (int) ((((PercentType) state).intValue() * 90.0) / 50.0 - 90.0);
+        } else {
+            value = getIntFromItem(taggedItem, defaultValue);
+        }
+        return value;
+    }
+
+    private static Supplier<CompletableFuture<Integer>> getAngleSupplier(HomekitTaggedItem taggedItem,
+            int defaultValue) {
+        return () -> CompletableFuture.completedFuture(getAngleFromItem(taggedItem, defaultValue));
+    }
+
+    private static Supplier<CompletableFuture<Integer>> getIntSupplier(HomekitTaggedItem taggedItem, int defaultValue) {
+        return () -> CompletableFuture.completedFuture(getIntFromItem(taggedItem, defaultValue));
     }
 
     private static ExceptionalConsumer<Integer> setIntConsumer(HomekitTaggedItem taggedItem) {
@@ -242,10 +272,25 @@ public class HomekitCharacteristicFactory {
         };
     }
 
-    private static Supplier<CompletableFuture<Double>> getDoubleSupplier(HomekitTaggedItem taggedItem) {
+    private static ExceptionalConsumer<Integer> setAngleConsumer(HomekitTaggedItem taggedItem) {
+        return (value) -> {
+            if (taggedItem.getItem() instanceof NumberItem) {
+                ((NumberItem) taggedItem.getItem()).send(new DecimalType(value));
+            } else if (taggedItem.getItem() instanceof DimmerItem) {
+                value = (int) (value * 50.0 / 90.0 + 50.0);
+                ((DimmerItem) taggedItem.getItem()).send(new PercentType(value));
+            } else {
+                logger.warn("Item type {} is not supported for {}. Only DimmerItem and NumberItem are supported.",
+                        taggedItem.getItem().getType(), taggedItem.getName());
+            }
+        };
+    }
+
+    private static Supplier<CompletableFuture<Double>> getDoubleSupplier(HomekitTaggedItem taggedItem,
+            double defaultValue) {
         return () -> {
             final @Nullable DecimalType value = taggedItem.getItem().getStateAs(DecimalType.class);
-            return CompletableFuture.completedFuture(value != null ? value.doubleValue() : 0.0);
+            return CompletableFuture.completedFuture(value != null ? value.doubleValue() : defaultValue);
         };
     }
 
@@ -329,56 +374,68 @@ public class HomekitCharacteristicFactory {
 
     private static CarbonMonoxideLevelCharacteristic createCarbonMonoxideLevelCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new CarbonMonoxideLevelCharacteristic(getDoubleSupplier(taggedItem),
+        return new CarbonMonoxideLevelCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                CarbonMonoxideLevelCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, CARBON_DIOXIDE_LEVEL, updater),
                 getUnsubscriber(taggedItem, CARBON_DIOXIDE_LEVEL, updater));
     }
 
     private static CarbonMonoxidePeakLevelCharacteristic createCarbonMonoxidePeakLevelCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new CarbonMonoxidePeakLevelCharacteristic(getDoubleSupplier(taggedItem),
+        return new CarbonMonoxidePeakLevelCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                CarbonMonoxidePeakLevelCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, CARBON_DIOXIDE_PEAK_LEVEL, updater),
                 getUnsubscriber(taggedItem, CARBON_DIOXIDE_PEAK_LEVEL, updater));
     }
 
     private static CarbonDioxideLevelCharacteristic createCarbonDioxideLevelCharacteristic(HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new CarbonDioxideLevelCharacteristic(getDoubleSupplier(taggedItem),
+        return new CarbonDioxideLevelCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                CarbonDioxideLevelCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, CARBON_MONOXIDE_LEVEL, updater),
                 getUnsubscriber(taggedItem, CARBON_MONOXIDE_LEVEL, updater));
     }
 
     private static CarbonDioxidePeakLevelCharacteristic createCarbonDioxidePeakLevelCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new CarbonDioxidePeakLevelCharacteristic(getDoubleSupplier(taggedItem),
+        return new CarbonDioxidePeakLevelCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                CarbonDioxidePeakLevelCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, CARBON_MONOXIDE_PEAK_LEVEL, updater),
                 getUnsubscriber(taggedItem, CARBON_MONOXIDE_PEAK_LEVEL, updater));
     }
 
     private static CurrentHorizontalTiltAngleCharacteristic createCurrentHorizontalTiltAngleCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new CurrentHorizontalTiltAngleCharacteristic(getIntSupplier(taggedItem),
+        return new CurrentHorizontalTiltAngleCharacteristic(getAngleSupplier(taggedItem, 0),
                 getSubscriber(taggedItem, CURRENT_HORIZONTAL_TILT_ANGLE, updater),
                 getUnsubscriber(taggedItem, CURRENT_HORIZONTAL_TILT_ANGLE, updater));
     }
 
     private static CurrentVerticalTiltAngleCharacteristic createCurrentVerticalTiltAngleCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new CurrentVerticalTiltAngleCharacteristic(getIntSupplier(taggedItem),
+        return new CurrentVerticalTiltAngleCharacteristic(getAngleSupplier(taggedItem, 0),
                 getSubscriber(taggedItem, CURRENT_VERTICAL_TILT_ANGLE, updater),
                 getUnsubscriber(taggedItem, CURRENT_VERTICAL_TILT_ANGLE, updater));
     }
 
     private static TargetHorizontalTiltAngleCharacteristic createTargetHorizontalTiltAngleCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new TargetHorizontalTiltAngleCharacteristic(getIntSupplier(taggedItem), setIntConsumer(taggedItem),
-                getSubscriber(taggedItem, TARGET_HORIZONTAL_TILT_ANGLE, updater),
+        return new TargetHorizontalTiltAngleCharacteristic(getAngleSupplier(taggedItem, 0),
+                setAngleConsumer(taggedItem), getSubscriber(taggedItem, TARGET_HORIZONTAL_TILT_ANGLE, updater),
                 getUnsubscriber(taggedItem, TARGET_HORIZONTAL_TILT_ANGLE, updater));
     }
 
     private static TargetVerticalTiltAngleCharacteristic createTargetVerticalTiltAngleCharacteristic(
             HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new TargetVerticalTiltAngleCharacteristic(getIntSupplier(taggedItem), setIntConsumer(taggedItem),
+        return new TargetVerticalTiltAngleCharacteristic(getAngleSupplier(taggedItem, 0), setAngleConsumer(taggedItem),
                 getSubscriber(taggedItem, TARGET_HORIZONTAL_TILT_ANGLE, updater),
                 getUnsubscriber(taggedItem, TARGET_HORIZONTAL_TILT_ANGLE, updater));
     }
@@ -448,7 +505,12 @@ public class HomekitCharacteristicFactory {
 
     private static ColorTemperatureCharacteristic createColorTemperatureCharacteristic(HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new ColorTemperatureCharacteristic(getIntSupplier(taggedItem), setIntConsumer(taggedItem),
+        int minValue = taggedItem.getConfigurationAsInt(HomekitTaggedItem.MIN_VALUE,
+                ColorTemperatureCharacteristic.DEFAULT_MIN_VALUE);
+        return new ColorTemperatureCharacteristic(minValue,
+                taggedItem.getConfigurationAsInt(HomekitTaggedItem.MAX_VALUE,
+                        ColorTemperatureCharacteristic.DEFAULT_MAX_VALUE),
+                getIntSupplier(taggedItem, minValue), setIntConsumer(taggedItem),
                 getSubscriber(taggedItem, COLOR_TEMPERATURE, updater),
                 getUnsubscriber(taggedItem, COLOR_TEMPERATURE, updater));
     }
@@ -523,14 +585,14 @@ public class HomekitCharacteristicFactory {
 
     private static RotationSpeedCharacteristic createRotationSpeedCharacteristic(HomekitTaggedItem item,
             HomekitAccessoryUpdater updater) {
-        return new RotationSpeedCharacteristic(getIntSupplier(item), setPercentConsumer(item),
+        return new RotationSpeedCharacteristic(getIntSupplier(item, 0), setPercentConsumer(item),
                 getSubscriber(item, ROTATION_SPEED, updater), getUnsubscriber(item, ROTATION_SPEED, updater));
     }
 
     private static SetDurationCharacteristic createDurationCharacteristic(HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
         return new SetDurationCharacteristic(() -> {
-            int value = getIntFromItem(taggedItem);
+            int value = getIntFromItem(taggedItem, 0);
             final @Nullable Map<String, Object> itemConfiguration = taggedItem.getConfiguration();
             if ((value == 0) && (itemConfiguration != null)) { // check for default duration
                 final Object duration = itemConfiguration.get(HomekitValveImpl.CONFIG_DEFAULT_DURATION);
@@ -548,14 +610,14 @@ public class HomekitCharacteristicFactory {
 
     private static RemainingDurationCharacteristic createRemainingDurationCharacteristic(HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new RemainingDurationCharacteristic(getIntSupplier(taggedItem),
+        return new RemainingDurationCharacteristic(getIntSupplier(taggedItem, 0),
                 getSubscriber(taggedItem, REMAINING_DURATION, updater),
                 getUnsubscriber(taggedItem, REMAINING_DURATION, updater));
     }
 
     private static VolumeCharacteristic createVolumeCharacteristic(HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new VolumeCharacteristic(getIntSupplier(taggedItem),
+        return new VolumeCharacteristic(getIntSupplier(taggedItem, 0),
                 (volume) -> ((NumberItem) taggedItem.getItem()).send(new DecimalType(volume)),
                 getSubscriber(taggedItem, DURATION, updater), getUnsubscriber(taggedItem, DURATION, updater));
     }
@@ -569,8 +631,10 @@ public class HomekitCharacteristicFactory {
                         CoolingThresholdTemperatureCharacteristic.DEFAULT_MAX_VALUE),
                 taggedItem.getConfigurationAsDouble(HomekitTaggedItem.STEP,
                         CoolingThresholdTemperatureCharacteristic.DEFAULT_STEP),
-                getDoubleSupplier(taggedItem), setDoubleConsumer(taggedItem),
-                getSubscriber(taggedItem, COOLING_THRESHOLD_TEMPERATURE, updater),
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                CoolingThresholdTemperatureCharacteristic.DEFAULT_MIN_VALUE)),
+                setDoubleConsumer(taggedItem), getSubscriber(taggedItem, COOLING_THRESHOLD_TEMPERATURE, updater),
                 getUnsubscriber(taggedItem, COOLING_THRESHOLD_TEMPERATURE, updater));
     }
 
@@ -583,46 +647,66 @@ public class HomekitCharacteristicFactory {
                         HeatingThresholdTemperatureCharacteristic.DEFAULT_MAX_VALUE),
                 taggedItem.getConfigurationAsDouble(HomekitTaggedItem.STEP,
                         HeatingThresholdTemperatureCharacteristic.DEFAULT_STEP),
-                getDoubleSupplier(taggedItem), setDoubleConsumer(taggedItem),
-                getSubscriber(taggedItem, HEATING_THRESHOLD_TEMPERATURE, updater),
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                HeatingThresholdTemperatureCharacteristic.DEFAULT_MIN_VALUE)),
+                setDoubleConsumer(taggedItem), getSubscriber(taggedItem, HEATING_THRESHOLD_TEMPERATURE, updater),
                 getUnsubscriber(taggedItem, HEATING_THRESHOLD_TEMPERATURE, updater));
     }
 
     private static OzoneDensityCharacteristic createOzoneDensityCharacteristic(final HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new OzoneDensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new OzoneDensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                OzoneDensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, OZONE_DENSITY, updater), getUnsubscriber(taggedItem, OZONE_DENSITY, updater));
     }
 
     private static NitrogenDioxideDensityCharacteristic createNitrogenDioxideDensityCharacteristic(
             final HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new NitrogenDioxideDensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new NitrogenDioxideDensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                NitrogenDioxideDensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, NITROGEN_DIOXIDE_DENSITY, updater),
                 getUnsubscriber(taggedItem, NITROGEN_DIOXIDE_DENSITY, updater));
     }
 
     private static SulphurDioxideDensityCharacteristic createSulphurDioxideDensityCharacteristic(
             final HomekitTaggedItem taggedItem, HomekitAccessoryUpdater updater) {
-        return new SulphurDioxideDensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new SulphurDioxideDensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                SulphurDioxideDensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, SULPHUR_DIOXIDE_DENSITY, updater),
                 getUnsubscriber(taggedItem, SULPHUR_DIOXIDE_DENSITY, updater));
     }
 
     private static PM25DensityCharacteristic createPM25DensityCharacteristic(final HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new PM25DensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new PM25DensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                PM25DensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, PM25_DENSITY, updater), getUnsubscriber(taggedItem, PM25_DENSITY, updater));
     }
 
     private static PM10DensityCharacteristic createPM10DensityCharacteristic(final HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new PM10DensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new PM10DensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                PM10DensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, PM10_DENSITY, updater), getUnsubscriber(taggedItem, PM10_DENSITY, updater));
     }
 
     private static VOCDensityCharacteristic createVOCDensityCharacteristic(final HomekitTaggedItem taggedItem,
             HomekitAccessoryUpdater updater) {
-        return new VOCDensityCharacteristic(getDoubleSupplier(taggedItem),
+        return new VOCDensityCharacteristic(
+                getDoubleSupplier(taggedItem,
+                        taggedItem.getConfigurationAsDouble(HomekitTaggedItem.MIN_VALUE,
+                                VOCDensityCharacteristic.DEFAULT_MIN_VALUE)),
                 getSubscriber(taggedItem, VOC_DENSITY, updater), getUnsubscriber(taggedItem, VOC_DENSITY, updater));
     }
 }

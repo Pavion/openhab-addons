@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,8 +12,8 @@
  */
 package org.openhab.binding.evohome.internal.api;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +48,6 @@ public class EvohomeApiClient {
     private static final String CLIENT_SECRET = "1a15cdb8-42de-407b-add0-059f92c530cb";
 
     private final Logger logger = LoggerFactory.getLogger(EvohomeApiClient.class);
-    private final HttpClient httpClient;
     private final EvohomeAccountConfiguration configuration;
     private final ApiAccess apiAccess;
 
@@ -60,19 +59,9 @@ public class EvohomeApiClient {
      * Creates a new API client based on the V2 API interface
      *
      * @param configuration The configuration of the account to use
-     * @throws Exception
      */
-    public EvohomeApiClient(EvohomeAccountConfiguration configuration, HttpClient httpClient) throws Exception {
+    public EvohomeApiClient(EvohomeAccountConfiguration configuration, HttpClient httpClient) {
         this.configuration = configuration;
-        this.httpClient = httpClient;
-
-        try {
-            httpClient.start();
-        } catch (Exception e) {
-            logger.error("Could not start http client", e);
-            throw new EvohomeApiClientException("Could not start http client", e);
-        }
-
         apiAccess = new ApiAccess(httpClient);
         apiAccess.setApplicationId(APPLICATION_ID);
     }
@@ -85,14 +74,6 @@ public class EvohomeApiClient {
         useraccount = null;
         locations = null;
         locationsStatus = null;
-
-        if (httpClient.isStarted()) {
-            try {
-                httpClient.stop();
-            } catch (Exception e) {
-                logger.debug("Could not stop http client.", e);
-            }
-        }
     }
 
     public boolean login() {
@@ -219,17 +200,9 @@ public class EvohomeApiClient {
     }
 
     private boolean authenticateWithUsername() {
-        boolean result = false;
-
-        try {
-            String credentials = "Username=" + URLEncoder.encode(configuration.username, "UTF-8") + "&" + "Password="
-                    + URLEncoder.encode(configuration.password, "UTF-8");
-            result = authenticate(credentials, "password");
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Credential conversion failed", e);
-        }
-
-        return result;
+        String credentials = "Username=" + URLEncoder.encode(configuration.username, StandardCharsets.UTF_8) + "&"
+                + "Password=" + URLEncoder.encode(configuration.password, StandardCharsets.UTF_8);
+        return authenticate(credentials, "password");
     }
 
     private boolean authenticateWithToken(String accessToken) {

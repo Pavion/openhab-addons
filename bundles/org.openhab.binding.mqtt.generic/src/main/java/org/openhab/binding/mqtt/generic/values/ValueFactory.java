@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,11 +12,11 @@
  */
 package org.openhab.binding.mqtt.generic.values;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.mqtt.generic.ChannelConfig;
 import org.openhab.binding.mqtt.generic.internal.MqttBindingConstants;
 import org.openhab.binding.mqtt.generic.mapping.ColorMode;
+import org.openhab.core.types.util.UnitUtils;
 
 /**
  * A factory t
@@ -25,6 +25,7 @@ import org.openhab.binding.mqtt.generic.mapping.ColorMode;
  */
 @NonNullByDefault
 public class ValueFactory {
+
     /**
      * Creates a new channel state value.
      *
@@ -35,7 +36,7 @@ public class ValueFactory {
         Value value;
         switch (channelTypeID) {
             case MqttBindingConstants.STRING:
-                value = StringUtils.isBlank(config.allowedStates) ? new TextValue()
+                value = config.allowedStates.isBlank() ? new TextValue()
                         : new TextValue(config.allowedStates.split(","));
                 break;
             case MqttBindingConstants.DATETIME:
@@ -48,7 +49,7 @@ public class ValueFactory {
                 value = new LocationValue();
                 break;
             case MqttBindingConstants.NUMBER:
-                value = new NumberValue(config.min, config.max, config.step, config.unit);
+                value = new NumberValue(config.min, config.max, config.step, UnitUtils.parseUnit(config.unit));
                 break;
             case MqttBindingConstants.DIMMER:
                 value = new PercentageValue(config.min, config.max, config.step, config.on, config.off);

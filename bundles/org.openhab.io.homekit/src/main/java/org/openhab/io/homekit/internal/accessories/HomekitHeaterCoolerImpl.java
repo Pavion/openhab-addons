@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -16,6 +16,8 @@ import static org.openhab.io.homekit.internal.HomekitCharacteristicType.ACTIVE_S
 import static org.openhab.io.homekit.internal.HomekitCharacteristicType.CURRENT_HEATER_COOLER_STATE;
 import static org.openhab.io.homekit.internal.HomekitCharacteristicType.TARGET_HEATER_COOLER_STATE;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import io.github.hapjava.accessories.HeaterCoolerAccessory;
 import io.github.hapjava.characteristics.HomekitCharacteristicChangeCallback;
 import io.github.hapjava.characteristics.impl.heatercooler.CurrentHeaterCoolerStateEnum;
 import io.github.hapjava.characteristics.impl.heatercooler.TargetHeaterCoolerStateEnum;
+import io.github.hapjava.characteristics.impl.thermostat.CurrentTemperatureCharacteristic;
 import io.github.hapjava.characteristics.impl.thermostat.TemperatureDisplayUnitCharacteristic;
 import io.github.hapjava.characteristics.impl.thermostat.TemperatureDisplayUnitEnum;
 import io.github.hapjava.services.impl.HeaterCoolerService;
@@ -71,13 +74,16 @@ public class HomekitHeaterCoolerImpl extends AbstractHomekitAccessoryImpl implem
         }
     };
 
+    private final List<CurrentHeaterCoolerStateEnum> customCurrentStateList = new ArrayList<>();
+    private final List<TargetHeaterCoolerStateEnum> customTargetStateList = new ArrayList<>();
+
     public HomekitHeaterCoolerImpl(HomekitTaggedItem taggedItem, List<HomekitTaggedItem> mandatoryCharacteristics,
             HomekitAccessoryUpdater updater, HomekitSettings settings) throws IncompleteAccessoryException {
         super(taggedItem, mandatoryCharacteristics, updater, settings);
         activeReader = new BooleanItemReader(getItem(ACTIVE_STATUS, GenericItem.class)
                 .orElseThrow(() -> new IncompleteAccessoryException(ACTIVE_STATUS)), OnOffType.ON, OpenClosedType.OPEN);
-        updateMapping(CURRENT_HEATER_COOLER_STATE, currentStateMapping);
-        updateMapping(TARGET_HEATER_COOLER_STATE, targetStateMapping);
+        updateMapping(CURRENT_HEATER_COOLER_STATE, currentStateMapping, customCurrentStateList);
+        updateMapping(TARGET_HEATER_COOLER_STATE, targetStateMapping, customTargetStateList);
         final HeaterCoolerService service = new HeaterCoolerService(this);
         service.addOptionalCharacteristic(new TemperatureDisplayUnitCharacteristic(this::getTemperatureDisplayUnit,
                 this::setTemperatureDisplayUnit, this::subscribeTemperatureDisplayUnit,
@@ -86,10 +92,25 @@ public class HomekitHeaterCoolerImpl extends AbstractHomekitAccessoryImpl implem
     }
 
     @Override
+    public CurrentHeaterCoolerStateEnum[] getCurrentHeaterCoolerStateValidValues() {
+        return customCurrentStateList.isEmpty()
+                ? currentStateMapping.keySet().toArray(new CurrentHeaterCoolerStateEnum[0])
+                : customCurrentStateList.toArray(new CurrentHeaterCoolerStateEnum[0]);
+    }
+
+    @Override
+    public TargetHeaterCoolerStateEnum[] getTargetHeaterCoolerStateValidValues() {
+        return customTargetStateList.isEmpty() ? targetStateMapping.keySet().toArray(new TargetHeaterCoolerStateEnum[0])
+                : customTargetStateList.toArray(new TargetHeaterCoolerStateEnum[0]);
+    }
+
+    @Override
     public CompletableFuture<Double> getCurrentTemperature() {
         final @Nullable DecimalType state = getStateAs(HomekitCharacteristicType.CURRENT_TEMPERATURE,
                 DecimalType.class);
-        return CompletableFuture.completedFuture(state != null ? convertToCelsius(state.doubleValue()) : 0.0);
+        return CompletableFuture.completedFuture(state != null ? convertToCelsius(state.doubleValue())
+                : getAccessoryConfiguration(HomekitCharacteristicType.CURRENT_TEMPERATURE, HomekitTaggedItem.MIN_VALUE,
+                        BigDecimal.valueOf(CurrentTemperatureCharacteristic.DEFAULT_MIN_VALUE)).doubleValue());
     }
 
     @Override

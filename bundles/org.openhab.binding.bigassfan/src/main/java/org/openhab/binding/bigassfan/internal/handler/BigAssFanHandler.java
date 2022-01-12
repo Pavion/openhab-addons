@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -16,7 +16,6 @@ import static org.openhab.binding.bigassfan.internal.BigAssFanBindingConstants.*
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -24,6 +23,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
 import org.openhab.binding.bigassfan.internal.BigAssFanConfig;
 import org.openhab.binding.bigassfan.internal.utils.BigAssFanConverter;
 import org.openhab.core.common.ThreadPoolManager;
@@ -612,13 +611,7 @@ public class BigAssFanHandler extends BaseThingHandler {
             }
 
             logger.debug("Sending message to {} at {}: {}", thing.getUID(), ipAddress, command);
-            byte[] buffer;
-            try {
-                buffer = command.getBytes(CHARSET);
-            } catch (UnsupportedEncodingException e) {
-                logger.warn("Unable to convert to string using {} charset: {}", CHARSET, e.getMessage(), e);
-                return;
-            }
+            byte[] buffer = command.getBytes(StandardCharsets.US_ASCII);
             try {
                 conn.write(buffer);
             } catch (IOException e) {
@@ -668,7 +661,7 @@ public class BigAssFanHandler extends BaseThingHandler {
         }
 
         private void processMessage(String incomingMessage) {
-            if (StringUtils.isEmpty(incomingMessage)) {
+            if (incomingMessage == null || incomingMessage.isEmpty()) {
                 return;
             }
 
@@ -742,11 +735,11 @@ public class BigAssFanHandler extends BaseThingHandler {
 
         private boolean isMe(String idFromDevice) {
             // Check match on MAC address
-            if (StringUtils.equalsIgnoreCase(idFromDevice, macAddress)) {
+            if (macAddress.equalsIgnoreCase(idFromDevice)) {
                 return true;
             }
             // Didn't match MAC address, check match for label
-            if (StringUtils.equalsIgnoreCase(idFromDevice, label)) {
+            if (label.equalsIgnoreCase(idFromDevice)) {
                 return true;
             }
             return false;

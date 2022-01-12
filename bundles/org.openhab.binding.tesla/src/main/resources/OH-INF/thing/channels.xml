@@ -119,7 +119,7 @@
 	<channel-type id="chargelimitsocstandard" advanced="true">
 		<item-type>Dimmer</item-type>
 		<label>Charge Limit SOC Standard</label>
-		<description>Standard charging limity of the vehicle, in %</description>
+		<description>Standard charging limit of the vehicle, in %</description>
 		<state pattern="%.1f %%" readOnly="true"></state>
 	</channel-type>
 	<channel-type id="chargeidealdistanceadded" advanced="true">
@@ -253,7 +253,7 @@
 		<item-type>Number:Length</item-type>
 		<label>Estimated Battery Range</label>
 		<description>Estimated battery range</description>
-		<state pattern="%d %unit%" readOnly="true"></state>
+		<state pattern="%.0f %unit%" readOnly="true"></state>
 	</channel-type>
 	<channel-type id="estimatedrange" advanced="true">
 		<item-type>Number</item-type>

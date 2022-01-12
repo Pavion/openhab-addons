@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
 import org.openhab.binding.atlona.internal.AtlonaHandlerCallback;
 import org.openhab.binding.atlona.internal.net.SocketSession;
 import org.openhab.binding.atlona.internal.net.SocketSessionListener;
@@ -201,7 +200,7 @@ class AtlonaPro3PortocolHandler {
         try {
             response = callback.getResponse();
             if (!response.equals("")) {
-                logger.debug("Altona protocol violation - didn't start with an inital empty response: '{}'", response);
+                logger.debug("Atlona protocol violation - didn't start with an inital empty response: '{}'", response);
             }
         } catch (Exception e) {
             // ignore - may not having given us an initial ""
@@ -214,10 +213,10 @@ class AtlonaPro3PortocolHandler {
         // we can tell which by the response to the invalid command
         session.sendCommand(NOTVALID_USER_OR_CMD);
 
-        // Command failed - Altona not configured with IPLogin - return success
+        // Command failed - Atlona not configured with IPLogin - return success
         response = callback.getResponse();
         if (response.startsWith(RSP_FAILED)) {
-            logger.debug("Altona didn't require a login");
+            logger.debug("Atlona didn't require a login");
             postLogin();
             return null;
         }
@@ -225,7 +224,7 @@ class AtlonaPro3PortocolHandler {
         // We should have been presented with a new "\r\nLogin: "
         response = callback.getResponse();
         if (!response.equals("")) {
-            logger.debug("Altona protocol violation - didn't start with an inital empty response: '{}'", response);
+            logger.debug("Atlona protocol violation - didn't start with an inital empty response: '{}'", response);
         }
 
         // Get the new "Login: " prompt response
@@ -238,7 +237,7 @@ class AtlonaPro3PortocolHandler {
             // Send the username and wait for a ": " response
             session.sendCommand(config.getUserName());
         } else {
-            return "Altona protocol violation - wasn't initially a command failure or login prompt: " + response;
+            return "Atlona protocol violation - wasn't initially a command failure or login prompt: " + response;
         }
 
         // We should have gotten the password response
@@ -253,7 +252,7 @@ class AtlonaPro3PortocolHandler {
             if (response.equals(RSP_LOGIN)) {
                 return "Username " + config.getUserName() + " is not a valid user on the atlona";
             }
-            return "Altona protocol violation - invalid response to a login: " + response;
+            return "Atlona protocol violation - invalid response to a login: " + response;
         }
 
         // Make sure we have a password
@@ -272,7 +271,7 @@ class AtlonaPro3PortocolHandler {
 
         // First make sure we had an empty response (the "\r\n" part)
         if (!response.equals("")) {
-            logger.debug("Altona protocol violation - not an empty response after password: '{}'", response);
+            logger.debug("Atlona protocol violation - not an empty response after password: '{}'", response);
         }
 
         // Now send an invalid command
@@ -309,7 +308,7 @@ class AtlonaPro3PortocolHandler {
         try {
             response = callback.getResponse();
             if (!response.equals("")) {
-                logger.debug("Altona protocol violation - didn't start with an inital empty response: '{}'", response);
+                logger.debug("Atlona protocol violation - didn't start with an inital empty response: '{}'", response);
             }
         } catch (Exception e) {
             // ignore - may not having given us an initial ""
@@ -317,12 +316,12 @@ class AtlonaPro3PortocolHandler {
 
         response = callback.getResponse();
         if (response.startsWith(RSP_WELCOME)) {
-            logger.debug("Altona AT-PRO3HD66M didn't require a login");
+            logger.debug("Atlona AT-PRO3HD66M didn't require a login");
             postLogin();
             return null;
         } else {
             if (!response.startsWith(RSP_LOGIN_PLEASE)) {
-                logger.debug("Altona protocol violation - didn't start with login prompt '{}'", response);
+                logger.debug("Atlona protocol violation - didn't start with login prompt '{}'", response);
             }
             // Since we were not logged in automatically, a user name is required from the configuration
             if (config.getUserName() == null || config.getUserName().trim().length() == 0) {
@@ -337,7 +336,7 @@ class AtlonaPro3PortocolHandler {
             // Check for an empty response after the login prompt (the "\r\n" part)
             response = callback.getResponse();
             if (!response.equals("")) {
-                logger.debug("Altona protocol violation - not an empty response after password: '{}'", response);
+                logger.debug("Atlona protocol violation - not an empty response after password: '{}'", response);
             }
 
             // Send the username and wait for a ": " response
@@ -346,7 +345,7 @@ class AtlonaPro3PortocolHandler {
             // We should have gotten the username response
             response = callback.getResponse();
             if (!response.startsWith(RSP_USERNAME)) {
-                logger.debug("Altona protocol violation - invalid response to username: '{}'", response);
+                logger.debug("Atlona protocol violation - invalid response to username: '{}'", response);
             }
 
             // Send the password
@@ -599,7 +598,7 @@ class AtlonaPro3PortocolHandler {
      * @param portNbr a greater than zero port number
      * @param level a volume level in decibels (must range from -79 to +15)
      */
-    void setVolume(int portNbr, double level) {
+    void setVolume(int portNbr, int level) {
         if (portNbr <= 0) {
             throw new IllegalArgumentException("portNbr must be greater than 0");
         }
@@ -906,7 +905,7 @@ class AtlonaPro3PortocolHandler {
                 int hdmiPortNbr = Integer.parseInt(m.group(1));
 
                 // could be "off" (if mirror off), "on"/"Out" (with 3rd group representing out)
-                String oper = StringUtils.trimToEmpty(m.group(2)).toLowerCase();
+                String oper = (m.group(2) == null ? "" : m.group(2).trim()).toLowerCase();
 
                 if (oper.equals("off")) {
                     callback.stateChanged(AtlonaPro3Utilities.createChannelID(AtlonaPro3Constants.GROUP_MIRROR,
@@ -1089,7 +1088,7 @@ class AtlonaPro3PortocolHandler {
 
         @Override
         public void responseReceived(String response) {
-            if (response == null || response == "") {
+            if (response == null || response.isEmpty()) {
                 return;
             }
 
@@ -1119,7 +1118,7 @@ class AtlonaPro3PortocolHandler {
             }
 
             m = versionHdPattern.matcher(response);
-            if (m.matches()) {
+            if (!capabilities.isUHDModel() && m.matches()) {
                 handleVersionResponse(m, response);
                 return;
             }

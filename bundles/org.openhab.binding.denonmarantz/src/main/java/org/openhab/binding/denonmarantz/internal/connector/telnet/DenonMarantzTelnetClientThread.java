@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -20,7 +20,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
-import org.apache.commons.lang.StringUtils;
 import org.openhab.binding.denonmarantz.internal.config.DenonMarantzConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +73,7 @@ public class DenonMarantzTelnetClientThread extends Thread {
                         break;
                     }
                     logger.trace("Received from {}: {}", config.getHost(), line);
-                    if (!StringUtils.isBlank(line)) {
+                    if (!line.isBlank()) {
                         listener.receivedLine(line);
                     }
                 } catch (SocketTimeoutException e) {
@@ -146,6 +145,7 @@ public class DenonMarantzTelnetClientThread extends Thread {
                 listener.telnetClientConnected(false);
             } catch (InterruptedException e) {
                 logger.debug("Interrupted while connecting to {}", config.getHost(), e);
+                Thread.currentThread().interrupt();
             }
             delay = RECONNECT_DELAY;
         }
