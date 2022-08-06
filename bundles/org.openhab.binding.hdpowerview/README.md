@@ -64,7 +64,6 @@ PowerView app. However, the configuration parameters are described below.
 
 #### Thing Configuration for PowerView Repeaters
 
-
 | Configuration Parameter | Description |
 |-------------------------|-------------|
 | id                      | The ID of the PowerView repeater in the app. Must be an integer. |
@@ -100,11 +99,17 @@ All of these channels appear in the binding, but only those which have a physica
 | batteryLevel   | Number                   | Battery level (10% = low, 50% = medium, 100% = high)
 | batteryVoltage | Number:ElectricPotential | Battery voltage reported by the shade. |
 | signalStrength | Number                   | Signal strength (0 for no or unknown signal, 1 for weak, 2 for average, 3 for good or 4 for excellent) |
+| hubRssi        | Number:Power             | Received Signal Strength Indicator for Hub |
+| repeaterRssi   | Number:Power             | Received Signal Strength Indicator for Repeater |
+
+Please note that RSSI values will only be updated upon manual request by a `REFRESH` command (e.g. in a rule).
 
 ### Channels for Repeaters (Thing type `repeater`)
 
 | Channel         | Item Type | Description                   |
 |-----------------|-----------|-------------------------------|
+| color           | Color     | Controls the color of the LED ring. A switch item can be linked: ON = white, OFF = turn off |
+| brightness      | Dimmer    | Controls the brightness of the LED ring. |
 | identify        | String    | Flash repeater to identify. Valid values are: `IDENTIFY` |
 | blinkingEnabled | Switch    | Blink during commands.        |
 
@@ -208,6 +213,8 @@ For single shades the refresh takes the item's channel into consideration:
 | batteryLevel   | Battery           |
 | batteryVoltage | Battery           |
 | signalStrength | Survey            |
+| hubRssi        | Survey            |
+| repeaterRssi   | Survey            |
 
 ## Full Example
 
@@ -238,6 +245,8 @@ Number Living_Room_Shade_SignalStrength "Living Room Shade Signal Strength" {cha
 Repeater items:
 
 ```
+Color Bedroom_Repeater_Color "Bedroom Repeater Color" {channel="hdpowerview:repeater:home:r16384:color"}
+Dimmer Bedroom_Repeater_Brightness "Bedroom Repeater Brightness" {channel="hdpowerview:repeater:home:r16384:brightness"}
 String Bedroom_Repeater_Identify "Bedroom Repeater Identify" {channel="hdpowerview:repeater:home:r16384:identify"}
 Switch Bedroom_Repeater_BlinkingEnabled "Bedroom Repeater Blinking Enabled [%s]" {channel="hdpowerview:repeater:home:r16384:blinkingEnabled"}
 ```
@@ -272,6 +281,9 @@ Frame label="Living Room" {
     Text item=Living_Room_Shade_Battery_Voltage
 }
 Frame label="Bedroom" {
+    Colorpicker item=PowerViewRepeater_Color
+    Switch item=PowerViewRepeater_Color
+    Slider item=PowerViewRepeater_Brightness
     Switch item=Bedroom_Repeater_Identify mappings=[IDENTIFY="Identify"]
     Switch item=Bedroom_Repeater_BlinkingEnabled
 }

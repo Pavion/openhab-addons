@@ -38,6 +38,10 @@ The binding will automatically discover Velux Bridges within the local network, 
 Once a Velux Bridge has been discovered, you will need to enter the `password` Configuration Parameter (see below) before the binding can communicate with it.
 And once the Velux Bridge is fully configured, the binding will automatically discover all its respective scenes and actuators (like windows and rollershutters), and place them in the Inbox.
 
+Note: When the KLF200 hub is started it provides a temporary private Wi-Fi Access Point for initial configuration.
+And if any device connects to this AP, it disables the normal LAN connection, thus preventing the binding from connecting.
+So make sure this AP is not permanently on (the default setting is that the AP will turn off after some time).
+
 ## Thing Configuration
 
 ### Thing Configuration for "bridge"
@@ -90,9 +94,14 @@ In addition there are some optional Configuration Parameters.
 
 Notes:
 
-1. To enable a complete inversion of all parameter values (i.e. for Velux windows), use the property `inverted` or add a trailing star to the eight-byte serial number. For an example, see below at item `Velux DG Window Bathroom`.
+1. To enable a complete inversion of all parameter values (i.e. for Velux windows), use the property `inverted` or add a trailing star to the eight-byte serial number.
+For an example, see the Thing definition for 'Bathroom_Roof_Window' below.
 
-2. Somfy devices do not provide a valid serial number to the Velux KLF200 gateway. In this case you should enter the default `serial` number 00:00:00:00:00:00:00:00, and in addition enter the `name` parameter; this is the name that you gave to the actuator when you first registered it in the KLF200 Bridge. For an example, see below at item `Velux OG Somfy Shutter`.
+2. Somfy devices do not provide a valid serial number to the Velux KLF200 Bridge.
+For such devices you have to enter the special all-zero serial number 00:00:00:00:00:00:00:00 in the `serial` parameter.
+This special serial number complies with the serial number validation checks, but also makes the binding use the `name` parameter value instead of the `serial` parameter value when it communicates with the KLF Bridge.
+The `name` parameter must therefore contain the name that you gave to the actuator when you first registered it in the KLF200 Bridge.
+For an example, see the Thing definition for 'Living_Room_Awning' below.
 
 ### Thing Configuration for "scene"
 
@@ -130,7 +139,7 @@ The supported Channels and their associated channel types are shown below.
 | downtime    | Number    | Time interval (sec) between last successful and most recent device interaction. |
 | doDetection | Switch    | Command to activate bridge detection mode.                                      |
 
-### Channels for "window" / "rollershutter" Things
+### Channels for "window" Things
 
 The supported Channels and their associated channel types are shown below.
 
@@ -148,6 +157,23 @@ The `position` Channel indicates the open/close state of the window (resp. rolle
 - If a window is opened manually, the display is `UNDEF`.
 - In case of errors (e.g. window jammed) the display is `UNDEF`.
 - If a Somfy actuator is commanded to its 'favorite' position via a Somfy remote control, under some circumstances the display is `UNDEF`. See also Rules below.
+
+### Channels for "rollershutter" Things
+
+The supported Channels and their associated channel types are shown below.
+
+| Channel      | Data Type     | Description                                     |
+|--------------|---------------|-------------------------------------------------|
+| position     | Rollershutter | Actual position of the window or device.        |
+| limitMinimum | Rollershutter | Minimum limit position of the window or device. |
+| limitMaximum | Rollershutter | Maximum limit position of the window or device. |
+| vanePosition | Dimmer        | Vane position of a Venetian blind.              |
+
+The `position`, `limitMinimum`, and `limitMaximum` are the same as described above for "window" Things.
+
+The `vanePosition` Channel only applies to Venetian blinds that have tiltable slats.
+It can only have a valid position value if the main `position` of the Thing is fully down.
+So, if `vanePosition` is commanded to a new value, this will automatically cause the main `position` to move to the fully down position.
 
 ### Channels for "actuator" Things
 
@@ -222,11 +248,15 @@ The bridge Thing provides the following properties.
 
 ```
 Bridge velux:klf200:g24 "Velux KLF200 Hub" @ "Under Stairs" [ipAddress="192.168.1.xxx", password="secret"] {
-    Thing window w56-36-13-5A-11-2A-05-70 "Bathroom Roof Window" @ "Bathroom" [serial="56:36:13:5A:11:2A:05:70", inverted=true]
+	// Velux (standard) window (with serial number)
+    Thing window Bathroom_Roof_Window "Bathroom Roof Window" @ "Bathroom" [serial="56:36:13:5A:11:2A:05:70", inverted=true]
+
+	// Somfy (non-standard) rollershutter (without serial number)
+    Thing rollershutter Living_Room_Awning "Living Room Awning" @ "Living Room" [serial="00:00:00:00:00:00:00:00", name="Living Room Awning"]
 }
 ```
 
-[=> download sample things file for textual configuration](./doc/conf/things/velux.things)
+See [velux.things](doc/conf/things/velux.things) for more examples.
 
 ### Items
 
@@ -234,7 +264,7 @@ Bridge velux:klf200:g24 "Velux KLF200 Hub" @ "Under Stairs" [ipAddress="192.168.
 Rollershutter Bathroom_Roof_Window_Position "Bathroom Roof Window Position [%.0f %%]" {channel="velux:window:g24:w56-36-13-5A-11-2A-05-70:position"}
 ```
 
-[=> download sample items file for textual configuration](./doc/conf/items/velux.items)
+See [velux.items](doc/conf/items/velux.items) for more examples.
 
 ### Sitemap
 
@@ -244,7 +274,7 @@ Frame label="Velux Windows" {
 }
 ```
 
-[=> download sample sitemaps file for textual configuration](./doc/conf/sitemaps/velux.sitemap)
+See [velux.sitemap](doc/conf/sitemaps/velux.sitemap) for more examples.
 
 ### Rule for closing windows after a period of time
 
@@ -282,7 +312,7 @@ then
 end
 ```
 
-[=> download sample rules file for textual configuration](./doc/conf/rules/velux.rules)
+See [velux.rules](doc/conf/rules/velux.rules) for more examples.
 
 ### Rule for rebooting the Bridge
 
@@ -449,7 +479,6 @@ The next-generation firmware version two is not backward compatible, and does no
 Notes:
 
 - Velux bridges cannot be returned to version one of the firmware after being upgraded to version two.
-- Firmware updates are currently provided at [Velux download area](https://updates2.velux.com/).
 
 ## Is it possible to run the both communication methods in parallel?
 
