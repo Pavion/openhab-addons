@@ -44,7 +44,7 @@ public class NeatoAccountDiscoveryService extends AbstractDiscoveryService {
     private static final int TIMEOUT = 15;
 
     private final NeatoAccountHandler handler;
-    private final ThingUID bridgeUID;
+    private ThingUID bridgeUID;
 
     private ScheduledFuture<?> scanTask;
 
