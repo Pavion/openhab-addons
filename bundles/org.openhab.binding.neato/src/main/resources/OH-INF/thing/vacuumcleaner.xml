@@ -17,6 +17,7 @@
 			<parameter name="token" type="text">
 				<label>oAuth Token</label>
 				<description>See readme for how to obtain it</description>
+			</parameter>
 			<parameter name="email" type="text" required="true">
 				<label>E-mail Address</label>
 				<description>E-mail address for your Neato Cloud account.</description>
