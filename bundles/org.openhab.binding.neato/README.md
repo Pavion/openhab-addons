@@ -4,54 +4,34 @@ This is a fork of a Neato Binding which is a part of openHAB addons found here:
 https://github.com/openhab/openhab-addons
 This fork adds a new vendor option offering unofficial (and limited) support for Vorwerk vacuum cleaners.
 
-## Installation 
+## Installation for Vorwerk
 
-**If you already know your vacuum's serial and secret you can omit Bridge creation and just create your vacuum Thing with both provided.**
+You don't need to create a bridge and you need your vacuum's serial and secret. 
 
-As of now, bridge is used for automatic detection only and require some advanced steps. 
-If you're unsure what you're doing, don't :) 
-
-## Obtaining token or serial/secret
-
-### For Vorwerk vacuums
-
-- obtaining the token (for automatic discovery): 
-
-https://github.com/nicoh88/node-kobold#getting-a-token
-
-- obtaining serial/secret manually 
-
-Just use this additional command with the token to obtain the both your serial and your secret for manual creation
 ```
-curl --location --request GET 'https://beehive.ksecosys.com/dashboard' --header 'Authorization: Auth0Bearer VERY_LONG_ID_TOKEN'
+Thing neato:vacuumcleaner:ThingName "Vacuum" @ "Home" [ serial="MYSERIAL", secret="MYSECRET", vendor="vorwerk"]
 ```
 
-### For Neato vacuums
+If you don't have them, you may want to try my script here: 
 
-Unknown
-
-## Feedback
-
-Please provide your feedback. If possible, enable debug logging in Karaf with:
-```
-log:set DEBUG org.openhab.binding.neato
-```
-and include a log excerpt (don't forget to set it back to ERROR sometime).
+https://github.com/Pavion/vorwerk-robots
 
 # Neato Binding
 
 This binding is used to connect your openHAB system with Neato/Vorwerk web (where your vacuums live).
-The binding supports discovery via oAuth token (see above)
-From the binding, you will get status of your vacuum cleaners and also a command channel where you can control them. Since the binding uses a polling mechanism, there may be some latency depending on your setting regarding refresh time. 
+The binding supports discovery via configuring your login and password to a bridge.
+From the binding, you will get status of your vacuum cleaners and also a command channel where you can control them. Since the binding uses a polling mechanism, there may be some latency depending on your setting regarding refresh time.
+
+For log in transaction, the binding uses Beehive API and for status and control, the binding uses Nucleo API.
 
 ## Supported Things
 
 Supported thing types
 
-* neatoaccount (bridge)
-* vacuumcleaner
+- neatoaccount (bridge)
+- vacuumcleaner
 
-A bridge is only required for autodiscovery.
+A bridge is required to connect to your Neato Cloud account.  
 
 All "Connected" type vacuum cleaners should be supported by this binding since they are supported by the Neato API.  As of todays date, it is only verified with Neato Connected and Neato D7 vacuum cleaners.
 
@@ -60,36 +40,37 @@ All "Connected" type vacuum cleaners should be supported by this binding since t
 Discovery is used _after_ a bridge has been created and configured with your login information.
 
 1. Add the binding
-2. Add a new thing of type NeatoAccount and configure with your token id (see above)
-3. Go to Inbox and start discovery of Vacuums using Neato Binding
-4. Vacuums should appear in your inbox!
+1. Add a new thing of type NeatoAccount and configure with username and password
+1. Go to Inbox and start discovery of Vacuums using Neato Binding
+1. Vacuums should appear in your inbox!
 
 ## Thing Configuration
 
 In order to manually create a thing file and not use the discovery routine you will need to know the vacuums serial number as well as the secret used in web service calls.
 This is a bit difficult to get.
-The easiest way of getting this information is to use the third party python library that is available at https://github.com/stianaske/pybotvac.
+The easiest way of getting this information is to use the third party python library that is available at <https://github.com/stianaske/pybotvac>.
 
 Neato Account Config
 
 | Config   | Description                         |
-|----------|------------------------------------ |
-| token    | Your oAuth token                    |
+| -------- | ----------------------------------- |
+| email    | Email address tied to Neato Account |
+| password | Password tied to Neato Account      |
 | vendor   | Your vendor (Neato or Vorwerk)      |
 
 Vacuum Cleaner Config
 
-| Config   | Description                             |
-|----------|-----------------------------------------|
-| serial   | Serial Number of your Neato Robot       |
-| secret   | Secret for accessing Neato web services (see note above) |
-| refresh  | Refresh time interval in seconds for updates from the Neato Web Service.  Defaults to 60 sec |
-| vendor   | Your vendor (Neato or Vorwerk)      |
+| Config  | Description                                                                                  |
+| ------- | -------------------------------------------------------------------------------------------- |
+| serial  | Serial Number of your Neato Robot                                                            |
+| secret  | Secret for accessing Neato web services (see note above)                                     |
+| refresh | Refresh time interval in seconds for updates from the Neato Web Service.  Defaults to 60 sec |
+| vendor  | Your vendor (Neato or Vorwerk)                                                              |
 
 ## Channels
 
 | Channel             | Type   | Label                      | Description                                                                               | Read Only |
-|---------------------|--------|----------------------------|-------------------------------------------------------------------------------------------|-----------|
+| ------------------- | ------ | -------------------------- | ----------------------------------------------------------------------------------------- | --------- |
 | battery-level       | Number | Battery Level              | Battery Level of the vacuum cleaner.                                                      | True      |
 | state               | String | Current State              | Current state of the vacuum cleaner.                                                      | True      |
 | available-services  | String | Current available services | List of services that are currently available for the vacuum cleaner                      | True      |
@@ -111,9 +92,9 @@ Vacuum Cleaner Config
 
 Below you will find examples of the necessary files:
 
-**neato.items**
+### neato.items
 
-```
+```java
 Group GNeato
 Number FannDammBattery  "Battery level [%.0f %%]" <battery> (GNeato) { channel = "neato:vacuumcleaner:fanndamm:battery-level" }
 String FannDammState  "Status [MAP(neato-sv.map):%s]" (GNeato) { channel = "neato:vacuumcleaner:fanndamm:state" }
@@ -131,9 +112,9 @@ Number FannDammSpotHeight  "SpotHeight [%.0f]" <niveau> (GNeato)  { channel = "n
 String FannDammCommand  "Send Command" { channel = "neato:vacuumcleaner:fanndamm:command" }
 ```
 
-**sitemap**
+### neato.sitemap
 
-```
+```perl
 Frame label="Neato BotVac Connected" {
     Switch item=FannDammCommand mappings=[cleanWithMap="cleanWithMap", clean="Clean",stop="Stop",pause="Pause",resume="Resume", dock="Send to dock"]
     Text item=FannDammBattery label="Battery level"
@@ -145,24 +126,8 @@ Frame label="Neato BotVac Connected" {
 }
 ```
 
-**neato.things** (Vorwerk edition)
+### neato.things
 
-- Bridge (autodiscovery only)
-
-```
-Bridge neato:neatoaccount:bridgeName "Vacuum Account" @ "Home" [ vendor="vorwerk", token="VERY_LONG_ID_TOKEN" ] 
-```
-
-- Vacuum only 
-
-```
-Thing neato:vacuumcleaner:ThingName "Vacuum" @ "Home" [ serial="MYSERIAL", secret="MYSECRET", vendor="vorwerk"]
-```
-
-- Both (because why not)
-
-```
-Bridge neato:neatoaccount:bridgeName "Vacuum Account" @ "Home" [ vendor="vorwerk", token="" ] {
-    Thing vacuumcleaner ThingName "Vacuum" @ "Home" [ serial="MYSERIAL", secret="MYSECRET", vendor="vorwerk"]
-}
+```java
+neato:vacuumcleaner:fanndamm [ serial="vacuumcleaner-serial", secret="secret-string"]
 ```

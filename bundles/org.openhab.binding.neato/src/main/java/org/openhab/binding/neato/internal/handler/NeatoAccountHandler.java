@@ -99,7 +99,7 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
 
     public @NonNull List<Robot> getRobotsFromNeato() {
         logger.debug("Attempting to find robots tied to account");
-        String accessToken = accountConfig.getToken();
+        String accessToken = authenticate(accountConfig.getEmail(), accountConfig.getPassword());
 
         if (accessToken != null) {
             if (!accessToken.equals("")) {
@@ -108,5 +108,67 @@ public class NeatoAccountHandler extends BaseBridgeHandler {
         }
 
         return new ArrayList<>();
+    }
+
+    private String authenticate(String username, String password) {
+        Gson gson = new Gson();
+
+        AuthRequest req = new AuthRequest(username, password, "ios",
+                new BigInteger(130, new SecureRandom()).toString(64));
+
+        String authenticationResponse = "";
+        try {
+            authenticationResponse = sendAuthRequestToNeato(gson.toJson(req));
+        } catch (IOException e) {
+            logger.debug("Error when sending Authentication request to Neato.", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "Error when sending Authentication request to Neato.");
+        }
+
+        BeehiveAuthentication authenticationObject = gson.fromJson(authenticationResponse, BeehiveAuthentication.class);
+        return authenticationObject.getAccessToken();
+    }
+
+    private String sendAuthRequestToNeato(String data) throws IOException {
+        Properties headers = new Properties();
+        headers.setProperty("Accept", "application/vnd.neato.nucleo.v1");
+
+        InputStream stream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+        String resultString = HttpUtil.executeUrl("POST", "https://beehive.neatocloud.com/sessions", headers, stream,
+                "application/json", 20000);
+
+        logger.debug("Authentication Response: {}", resultString);
+
+        return resultString;
+    }
+
+    private static class AuthRequest {
+        private String email;
+        private String password;
+        private String os;
+        private String token;
+
+        public AuthRequest(String email, String password, String os, String token) {
+            this.email = email;
+            this.password = password;
+            this.os = os;
+            this.token = token;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public String getOs() {
+            return os;
+        }
+
+        public String getToken() {
+            return token;
+        }
     }
 }

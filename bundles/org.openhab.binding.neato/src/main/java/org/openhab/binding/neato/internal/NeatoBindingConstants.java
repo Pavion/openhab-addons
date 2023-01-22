@@ -50,7 +50,6 @@ public class NeatoBindingConstants {
     public static final String CONFIG_SERIAL = "serial";
     public static final String CONFIG_REFRESHTIME = "refresh";
     public static final String CONFIG_VENDOR = "vendor";
-    public static final String CONFIG_TOKEN = "token";
 
     public static final String PROPERTY_NAME = "robot-name";
 }
