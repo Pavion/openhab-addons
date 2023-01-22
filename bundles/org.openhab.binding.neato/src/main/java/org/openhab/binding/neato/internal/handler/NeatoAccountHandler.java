@@ -12,13 +12,19 @@
  */
 package org.openhab.binding.neato.internal.handler;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.openhab.binding.neato.internal.VendorVorwerk;
+import org.openhab.binding.neato.internal.classes.BeehiveAuthentication;
 import org.openhab.binding.neato.internal.classes.NeatoAccountInformation;
 import org.openhab.binding.neato.internal.classes.Robot;
 import org.openhab.binding.neato.internal.config.NeatoAccountConfig;
