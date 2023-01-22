@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -81,7 +81,7 @@ public class ShellyUtils {
         if (classOfT.isInstance(json)) {
             return wrap(classOfT).cast(json);
         } else if (json.isEmpty()) { // update GSON might return null
-            throw new ShellyApiException(PRE + className + "from empty JSON");
+            throw new ShellyApiException(PRE + className + " from empty JSON");
         } else {
             try {
                 @Nullable
@@ -92,9 +92,10 @@ public class ShellyUtils {
                 return obj;
             } catch (JsonSyntaxException e) {
                 throw new ShellyApiException(
-                        PRE + className + "from JSON (syntax/format error: " + e.getMessage() + "): " + json, e);
+                        PRE + className + " from JSON (syntax/format error: " + e.getMessage() + "): " + json, e);
             } catch (RuntimeException e) {
-                throw new ShellyApiException(PRE + className + " from JSON: " + json, e);
+                throw new ShellyApiException(
+                        PRE + className + " from JSON (" + getString(e.getMessage() + "), JSON=" + json), e);
             }
         }
     }

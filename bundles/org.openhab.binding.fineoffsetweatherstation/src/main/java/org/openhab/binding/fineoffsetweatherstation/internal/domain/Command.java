@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -231,7 +231,17 @@ public enum Command {
     /**
      * write back rain reset time
      */
-    CMD_WRITE_RSTRAIN_TIME((byte) 0x56, 1);
+    CMD_WRITE_RSTRAIN_TIME((byte) 0x56, 1),
+
+    /**
+     * read rain data including piezo (wh90)
+     */
+    CMD_READ_RAIN((byte) 0x57, 2),
+
+    /**
+     * write rain data
+     */
+    CMD_WRITE_RAIN((byte) 0x58, 1);
 
     private final byte code;
     private final int sizeBytes;

@@ -6,7 +6,7 @@ His [Java Library](https://github.com/zazaz-de/iot-device-bosch-indego-controlle
 
 ## Thing Configuration
 
-Currently the binding supports  ***indego***  mowers as a thing type with these configuration parameters:
+Currently the binding supports  _**indego**_  mowers as a thing type with these configuration parameters:
 
 | Parameter          | Description                                                       | Default |
 |--------------------|-------------------------------------------------------------------|---------|
@@ -28,15 +28,16 @@ Currently the binding supports  ***indego***  mowers as a thing type with these 
 | mowed              | Dimmer                   | Cut grass in percent                                                                                                                |           |
 | lastCutting        | DateTime                 | Last cutting time                                                                                                                   |           |
 | nextCutting        | DateTime                 | Next scheduled cutting time                                                                                                         |           |
-| batteryVoltage     | Number:ElectricPotential | Battery voltage reported by the device [^1]                                                                                         |           |
-| batteryLevel       | Number                   | Battery level as a percentage (0-100%) [^1]                                                                                         |           |
-| lowBattery         | Switch                   | Low battery warning with possible values on (low battery) and off (battery ok) [^1]                                                 |           |
-| batteryTemperature | Number:Temperature       | Battery temperature reported by the device [^1]                                                                                     |           |
+| batteryVoltage     | Number:ElectricPotential | Battery voltage reported by the device<sup>1</sup>                                                                                  |           |
+| batteryLevel       | Number                   | Battery level as a percentage (0-100%)<sup>1</sup>                                                                                  |           |
+| lowBattery         | Switch                   | Low battery warning with possible values on (low battery) and off (battery ok)<sup>1</sup>                                          |           |
+| batteryTemperature | Number:Temperature       | Battery temperature reported by the device<sup>1</sup>                                                                              |           |
 | gardenSize         | Number:Area              | Garden size mapped by the device                                                                                                    |           |
-| gardenMap          | Image                    | Garden map created by the device [^2]                                                                                               |           |
+| gardenMap          | Image                    | Garden map created by the device<sup>2</sup>                                                                                        |           |
 
-[^1]: This will be updated every six hours when the device is idle. It will wake up the device, which can include turning on its display. When the device is active or charging, this will be updated every two minutes.
-[^2]: This will be updated as often as specified by the `stateActiveRefresh` thing parameter.
+<sup>1)</sup> This will be updated every six hours when the device is idle. It will wake up the device, which can include turning on its display. When the device is active or charging, this will be updated every two minutes.
+
+<sup>2)</sup> This will be updated as often as specified by the `stateActiveRefresh` thing parameter.
 
 ### State Codes
 
@@ -59,6 +60,7 @@ Currently the binding supports  ***indego***  mowers as a thing type with these 
 | 518   | Border cut                                  |
 | 519   | Idle in lawn                                |
 | 523   | SpotMow                                     |
+| 768   | Returning to dock                           |
 | 769   | Returning to dock                           |
 | 770   | Returning to dock                           |
 | 771   | Returning to dock - Battery low             |
@@ -77,13 +79,13 @@ Currently the binding supports  ***indego***  mowers as a thing type with these 
 
 ### `indego.things` File
 
-```
+```java
 boschindego:indego:lawnmower [username="mail@example.com", password="idontneedtocutthelawnagain", refresh=120]
 ```
 
 ### `indego.items` File
 
-```
+```java
 Number Indego_State { channel="boschindego:indego:lawnmower:state" }
 Number Indego_ErrorCode { channel="boschindego:indego:lawnmower:errorcode" }
 Number Indego_StateCode { channel="boschindego:indego:lawnmower:statecode" }
@@ -102,6 +104,6 @@ Image Indego_GardenMap { channel="boschindego:indego:lawnmower:gardenMap" }
 
 ### `indego.sitemap` File
 
-```
+```perl
 Switch item=Indego_State mappings=[1="Mow", 2="Return",3="Pause"]
 ```

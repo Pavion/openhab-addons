@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -18,6 +18,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.velux.internal.bridge.common.GetProduct;
 import org.openhab.binding.velux.internal.bridge.slip.utils.KLF200Response;
 import org.openhab.binding.velux.internal.bridge.slip.utils.Packet;
+import org.openhab.binding.velux.internal.things.StatusReply;
 import org.openhab.binding.velux.internal.things.VeluxKLFAPI.Command;
 import org.openhab.binding.velux.internal.things.VeluxKLFAPI.CommandNumber;
 import org.openhab.binding.velux.internal.things.VeluxProduct;
@@ -81,8 +82,8 @@ public class SCgetProductStatus extends GetProduct implements SlipBridgeCommunic
 
     private boolean success = false;
     private boolean finished = false;
-
     private VeluxProduct product = VeluxProduct.UNKNOWN;
+    private StatusReply statusReply = StatusReply.COMMAND_COMPLETED_OK;
 
     public SCgetProductStatus() {
         logger.debug("SCgetProductStatus(Constructor) called.");
@@ -218,6 +219,7 @@ public class SCgetProductStatus extends GetProduct implements SlipBridgeCommunic
                                 break;
                             default:
                                 ntfState = VeluxProduct.ProductState.ERROR.value;
+                                statusReply = StatusReply.fromCode(ntfStatusReply);
                         }
                         break;
                 }
@@ -280,5 +282,10 @@ public class SCgetProductStatus extends GetProduct implements SlipBridgeCommunic
     public VeluxProduct getProduct() {
         logger.trace("getProduct(): returning {}.", product);
         return product;
+    }
+
+    @Override
+    public StatusReply getStatusReply() {
+        return statusReply;
     }
 }

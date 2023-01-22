@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -66,9 +66,9 @@ public class ShellyLightHandler extends ShellyBaseHandler {
      * @param httpPort port of the openHAB HTTP API
      */
     public ShellyLightHandler(final Thing thing, final ShellyTranslationProvider translationProvider,
-            final ShellyBindingConfiguration bindingConfig, final Shelly1CoapServer coapServer, final String localIP,
-            int httpPort, final HttpClient httpClient) {
-        super(thing, translationProvider, bindingConfig, coapServer, localIP, httpPort, httpClient);
+            final ShellyBindingConfiguration bindingConfig, final ShellyThingTable thingTable,
+            final Shelly1CoapServer coapServer, final HttpClient httpClient) {
+        super(thing, translationProvider, bindingConfig, thingTable, coapServer, httpClient);
         channelColors = new TreeMap<>();
     }
 

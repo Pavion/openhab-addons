@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -27,13 +27,20 @@ import org.openhab.binding.fineoffsetweatherstation.internal.service.GatewayQuer
  */
 @NonNullByDefault
 public enum Protocol {
-    DEFAULT(FineOffsetGatewayQueryService::new),
-    ELV(ELVGatewayQueryService::new);
+    DEFAULT(FineOffsetGatewayQueryService::new, null),
+    ELV(ELVGatewayQueryService::new, Measurand.ParserCustomizationType.ELV);
 
     private final GatewayQueryServiceFactory queryServiceFactory;
+    private final Measurand.@Nullable ParserCustomizationType parserCustomizationType;
 
-    Protocol(GatewayQueryServiceFactory queryServiceFactory) {
+    Protocol(GatewayQueryServiceFactory queryServiceFactory,
+            Measurand.@Nullable ParserCustomizationType parserCustomizationType) {
         this.queryServiceFactory = queryServiceFactory;
+        this.parserCustomizationType = parserCustomizationType;
+    }
+
+    public Measurand.@Nullable ParserCustomizationType getParserCustomizationType() {
+        return parserCustomizationType;
     }
 
     public GatewayQueryService getGatewayQueryService(FineOffsetGatewayConfiguration config,

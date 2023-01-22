@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -58,7 +58,6 @@ public class Shelly1CoIoTProtocol {
 
     // Due to the fact that the device reports only the current/last status, but no real events, we need to distinguish
     // between a real update or just a repeated status on periodic updates
-    protected int lastCfgCount = -1;
     protected int[] lastEventCount = { -1, -1, -1, -1, -1, -1, -1, -1 }; // 4Pro has 4 relays, so 8 should be fine
     protected String[] inputEvent = { "", "", "", "", "", "", "", "" };
     protected String lastWakeup = "";

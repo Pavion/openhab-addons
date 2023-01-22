@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.tado.internal.TadoBindingConstants.HvacMode;
 import org.openhab.binding.tado.internal.TadoBindingConstants.OperationMode;
 import org.openhab.binding.tado.internal.TadoBindingConstants.TemperatureUnit;
@@ -232,13 +233,20 @@ public class TadoZoneStateAdapter {
         return new DateTimeType(offsetDateTime.toZonedDateTime());
     }
 
-    private static State toTemperatureState(TemperatureObject temperature, TemperatureUnit temperatureUnit) {
+    private static State toTemperatureState(@Nullable TemperatureObject temperature, TemperatureUnit temperatureUnit) {
+        if (temperature == null || (temperature.getCelsius() == null && temperature.getFahrenheit() == null)) {
+            return UnDefType.UNDEF;
+        }
         return temperatureUnit == TemperatureUnit.FAHRENHEIT
                 ? new QuantityType<>(temperature.getFahrenheit(), ImperialUnits.FAHRENHEIT)
                 : new QuantityType<>(temperature.getCelsius(), SIUnits.CELSIUS);
     }
 
-    private static State toTemperatureState(TemperatureDataPoint temperature, TemperatureUnit temperatureUnit) {
+    private static State toTemperatureState(@Nullable TemperatureDataPoint temperature,
+            TemperatureUnit temperatureUnit) {
+        if (temperature == null || (temperature.getCelsius() == null && temperature.getFahrenheit() == null)) {
+            return UnDefType.UNDEF;
+        }
         return temperatureUnit == TemperatureUnit.FAHRENHEIT
                 ? new QuantityType<>(temperature.getFahrenheit(), ImperialUnits.FAHRENHEIT)
                 : new QuantityType<>(temperature.getCelsius(), SIUnits.CELSIUS);

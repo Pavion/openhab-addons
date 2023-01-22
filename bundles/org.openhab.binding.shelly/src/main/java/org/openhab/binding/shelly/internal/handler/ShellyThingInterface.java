@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -25,8 +25,11 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.Thing;
+import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.type.ChannelTypeUID;
 import org.openhab.core.types.State;
+import org.openhab.core.types.StateOption;
 
 /**
  * The {@link ShellyThingInterface} implements the interface for Shelly Manager to access the thing handler
@@ -38,6 +41,8 @@ public interface ShellyThingInterface {
 
     public ShellyDeviceProfile getProfile(boolean forceRefresh) throws ShellyApiException;
 
+    public @Nullable List<StateOption> getStateOptions(ChannelTypeUID uid);
+
     public double getChannelDouble(String group, String channel);
 
     public boolean updateChannel(String group, String channel, State value);
@@ -46,7 +51,15 @@ public interface ShellyThingInterface {
 
     public void setThingOnline();
 
-    public void setThingOffline(ThingStatusDetail detail, String messageKey);
+    public void setThingOffline(ThingStatusDetail detail, String messageKey, Object... arguments);
+
+    public String getThingType();
+
+    public ThingStatus getThingStatus();
+
+    public ThingStatusDetail getThingStatusDetail();
+
+    public boolean isThingOnline();
 
     public boolean requestUpdates(int requestCount, boolean refreshSettings);
 
@@ -99,4 +112,8 @@ public interface ShellyThingInterface {
     public void fillDeviceStatus(ShellySettingsStatus status, boolean updated);
 
     public boolean checkRepresentation(String key);
+
+    public void incProtMessages();
+
+    public void incProtErrors();
 }

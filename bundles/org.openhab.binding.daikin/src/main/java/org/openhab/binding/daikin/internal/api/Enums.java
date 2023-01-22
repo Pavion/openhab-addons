@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -181,17 +181,17 @@ public class Enums {
     }
 
     public enum SpecialMode {
-        NORMAL(0),
-        POWERFUL(1),
-        ECO(2);
+        NORMAL("0"),
+        POWERFUL("1"),
+        ECO("2");
 
-        private final int value;
+        private final String value;
 
-        SpecialMode(int value) {
+        SpecialMode(String value) {
             this.value = value;
         }
 
-        public int getValue() {
+        public String getValue() {
             return value;
         }
 

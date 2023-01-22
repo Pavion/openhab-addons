@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -127,7 +127,7 @@ public class UniFiClientThingHandler extends UniFiBaseThingHandler<UniFiClient, 
                 break;
             case CHANNEL_UPTIME:
                 // mgb: uptime should default to 0 seconds
-                state = DecimalType.ZERO;
+                state = new QuantityType<>(0, Units.SECOND);
                 break;
             case CHANNEL_EXPERIENCE:
                 // mgb: uptime + experience should default to 0
@@ -165,7 +165,7 @@ public class UniFiClientThingHandler extends UniFiBaseThingHandler<UniFiClient, 
     protected State getChannelState(final UniFiClient client, final String channelId) {
         final boolean clientHome = isClientHome(client);
         final UniFiDevice device = client.getDevice();
-        final UniFiSite site = (device == null ? null : device.getSite());
+        final UniFiSite site = device == null ? null : device.getSite();
         State state = getDefaultState(channelId);
 
         switch (channelId) {
@@ -200,7 +200,7 @@ public class UniFiClientThingHandler extends UniFiBaseThingHandler<UniFiClient, 
             // :uptime
             case CHANNEL_UPTIME:
                 if (client.getUptime() != null) {
-                    state = new DecimalType(client.getUptime());
+                    state = new QuantityType<>(client.getUptime(), Units.SECOND);
                 }
                 break;
 

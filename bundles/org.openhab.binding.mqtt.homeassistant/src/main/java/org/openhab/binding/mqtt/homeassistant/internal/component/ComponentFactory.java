@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -66,9 +66,13 @@ public class ComponentFactory {
             case "climate":
                 return new Climate(componentConfiguration);
             case "light":
-                return new Light(componentConfiguration);
+                return Light.create(componentConfiguration);
             case "lock":
                 return new Lock(componentConfiguration);
+            case "number":
+                return new Number(componentConfiguration);
+            case "select":
+                return new Select(componentConfiguration);
             case "sensor":
                 return new Sensor(componentConfiguration);
             case "switch":

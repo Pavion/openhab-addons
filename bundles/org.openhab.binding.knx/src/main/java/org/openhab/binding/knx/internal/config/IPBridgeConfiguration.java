@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -11,8 +11,6 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.openhab.binding.knx.internal.config;
-
-import java.math.BigDecimal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
@@ -28,9 +26,13 @@ public class IPBridgeConfiguration extends BridgeConfiguration {
     private boolean useNAT = false;
     private String type = "";
     private String ipAddress = "";
-    private BigDecimal portNumber = BigDecimal.valueOf(0);
+    private int portNumber = 0;
     private String localIp = "";
     private String localSourceAddr = "";
+    private String routerBackboneKey = "";
+    private String tunnelUserId = "";
+    private String tunnelUserPassword = "";
+    private String tunnelDeviceAuthentication = "";
 
     public Boolean getUseNAT() {
         return useNAT;
@@ -44,7 +46,7 @@ public class IPBridgeConfiguration extends BridgeConfiguration {
         return ipAddress;
     }
 
-    public BigDecimal getPortNumber() {
+    public int getPortNumber() {
         return portNumber;
     }
 
@@ -54,5 +56,21 @@ public class IPBridgeConfiguration extends BridgeConfiguration {
 
     public String getLocalSourceAddr() {
         return localSourceAddr;
+    }
+
+    public String getRouterBackboneKey() {
+        return routerBackboneKey;
+    }
+
+    public String getTunnelUserId() {
+        return tunnelUserId;
+    }
+
+    public String getTunnelUserPassword() {
+        return tunnelUserPassword;
+    }
+
+    public String getTunnelDeviceAuthentication() {
+        return tunnelDeviceAuthentication;
     }
 }

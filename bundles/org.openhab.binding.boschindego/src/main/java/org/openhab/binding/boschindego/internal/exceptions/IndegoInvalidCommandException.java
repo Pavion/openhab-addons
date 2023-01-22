@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -23,8 +23,22 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class IndegoInvalidCommandException extends IndegoException {
 
     private static final long serialVersionUID = -2946398731437793113L;
+    private int errorCode = 0;
 
     public IndegoInvalidCommandException(String message) {
         super(message);
+    }
+
+    public IndegoInvalidCommandException(String message, int errorCode) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public boolean hasErrorCode() {
+        return errorCode != 0;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
     }
 }
